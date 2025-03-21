@@ -8,6 +8,13 @@
       "when": 1742527916184,
       "tag": "0000_init-auth",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742569733240,
+      "tag": "0001_add-file-role",
+      "breakpoints": true
     }
   ]
 }

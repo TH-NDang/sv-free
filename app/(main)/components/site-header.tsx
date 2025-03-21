@@ -58,7 +58,7 @@ export function SiteHeader() {
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
-          className="gap-2.5 has-[>svg]:px-2"
+          className="cursor-pointer gap-2.5 has-[>svg]:px-2"
         >
           <SidebarIcon />
           <span className="truncate font-medium">Document Library</span>

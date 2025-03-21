@@ -2,49 +2,56 @@
 
 import {
   BookmarkIcon,
-  ClockIcon,
   FileTextIcon,
-  FolderIcon,
+  HomeIcon,
   LifeBuoy,
-  UsersIcon,
+  SearchIcon,
+  UploadIcon,
 } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/app/(main)/components/nav-main";
 import { NavSecondary } from "@/app/(main)/components/nav-secondary";
-import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 
 const data = {
   navMain: [
     {
-      title: "My Documents",
+      title: "Home",
       url: "/",
+      icon: HomeIcon,
+    },
+    {
+      title: "Browse Documents",
+      url: "/documents",
       icon: FileTextIcon,
     },
     {
-      title: "Recent",
-      url: "/documents/recent",
-      icon: ClockIcon,
+      title: "Advanced Search",
+      url: "/search",
+      icon: SearchIcon,
     },
     {
-      title: "Categories",
-      url: "/documents/categories",
-      icon: FolderIcon,
+      title: "Upload Document",
+      url: "/documents/upload",
+      icon: UploadIcon,
+    },
+  ],
+  navProfile: [
+    {
+      title: "My Uploads",
+      url: "/profile?tab=uploads",
+      icon: FileTextIcon,
     },
     {
-      title: "Saved",
-      url: "/documents/saved",
+      title: "Saved Documents",
+      url: "/profile?tab=saved",
       icon: BookmarkIcon,
-    },
-    {
-      title: "Shared with Me",
-      url: "/documents/shared",
-      icon: UsersIcon,
     },
   ],
   navSecondary: [
     {
-      title: "Help",
+      title: "Help & Support",
       url: "#",
       icon: LifeBuoy,
     },
@@ -58,9 +65,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain label="Discovery" items={data.navMain} />
+        <NavMain label="Personal" items={data.navProfile} />
+
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
+      <SidebarRail />
     </Sidebar>
   );
 }

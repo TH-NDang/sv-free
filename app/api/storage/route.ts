@@ -42,13 +42,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase.storage
+    const { data } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
       .getPublicUrl(path);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
 
     return NextResponse.json({ url: data.publicUrl });
   } catch {

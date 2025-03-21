@@ -1,497 +1,255 @@
 import { Metadata } from "next";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ChangeEmailCard,
+  ChangePasswordCard,
+  DeleteAccountCard,
+  ProvidersCard,
+  SessionsCard,
+  UpdateAvatarCard,
+  UpdateUsernameCard,
+} from "@daveyplate/better-auth-ui";
 
 export const metadata: Metadata = {
-  title: "Settings",
-  description: "Manage your account settings",
+  title: "Account Settings",
+  description: "Manage your account preferences and security settings",
 };
 
-const timezones = [
-  {
-    label: "Americas",
-    timezones: [
-      { value: "America/New_York", label: "(GMT-5) New York" },
-      { value: "America/Los_Angeles", label: "(GMT-8) Los Angeles" },
-      { value: "America/Chicago", label: "(GMT-6) Chicago" },
-      { value: "America/Toronto", label: "(GMT-5) Toronto" },
-      { value: "America/Vancouver", label: "(GMT-8) Vancouver" },
-      { value: "America/Sao_Paulo", label: "(GMT-3) São Paulo" },
-    ],
-  },
-  {
-    label: "Europe",
-    timezones: [
-      { value: "Europe/London", label: "(GMT+0) London" },
-      { value: "Europe/Paris", label: "(GMT+1) Paris" },
-      { value: "Europe/Berlin", label: "(GMT+1) Berlin" },
-      { value: "Europe/Rome", label: "(GMT+1) Rome" },
-      { value: "Europe/Madrid", label: "(GMT+1) Madrid" },
-      { value: "Europe/Amsterdam", label: "(GMT+1) Amsterdam" },
-    ],
-  },
-  {
-    label: "Asia/Pacific",
-    timezones: [
-      { value: "Asia/Tokyo", label: "(GMT+9) Tokyo" },
-      { value: "Asia/Shanghai", label: "(GMT+8) Shanghai" },
-      { value: "Asia/Singapore", label: "(GMT+8) Singapore" },
-      { value: "Asia/Dubai", label: "(GMT+4) Dubai" },
-      { value: "Australia/Sydney", label: "(GMT+11) Sydney" },
-      { value: "Asia/Seoul", label: "(GMT+9) Seoul" },
-    ],
-  },
-] as const;
+interface NotificationItemProps {
+  id: string;
+  title: string;
+  description: string;
+  type: "switch" | "checkbox";
+  defaultChecked?: boolean;
+  disabled?: boolean;
+}
 
-const loginHistory = [
-  {
-    date: "2024-01-01",
-    ip: "192.168.1.1",
-    location: "New York, USA",
-  },
-  {
-    date: "2023-12-29",
-    ip: "172.16.0.100",
-    location: "London, UK",
-  },
-  {
-    date: "2023-12-28",
-    ip: "10.0.0.50",
-    location: "Toronto, Canada",
-  },
-  {
-    date: "2023-12-25",
-    ip: "192.168.2.15",
-    location: "Sydney, Australia",
-  },
-] as const;
+function NotificationItem({
+  id,
+  title,
+  description,
+  type,
+  defaultChecked,
+  disabled,
+}: NotificationItemProps) {
+  return (
+    <div className="flex items-center justify-between py-3">
+      <div>
+        <Label htmlFor={id} className="text-sm font-medium">
+          {title}
+        </Label>
+        <p className="text-muted-foreground text-xs">{description}</p>
+      </div>
+      {type === "switch" ? (
+        <Switch id={id} defaultChecked={defaultChecked} disabled={disabled} />
+      ) : (
+        <Checkbox id={id} defaultChecked={defaultChecked} disabled={disabled} />
+      )}
+    </div>
+  );
+}
 
-const activeSessions = [
-  {
-    device: "MacBook Pro",
-    browser: "Chrome",
-    os: "macOS",
-  },
-  {
-    device: "iPhone",
-    browser: "Safari",
-    os: "iOS",
-  },
-  {
-    device: "iPad",
-    browser: "Safari",
-    os: "iOS",
-  },
-  {
-    device: "Android Phone",
-    browser: "Chrome",
-    os: "Android",
-  },
-] as const;
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="mb-4 text-base font-medium">{children}</h2>;
+}
+
+function SettingsCard({
+  title,
+  description,
+  children,
+  isDestructive = false,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  isDestructive?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-card rounded-lg p-6 ${isDestructive ? "border-destructive bg-destructive/5 border" : "bg-muted/30"}`}
+    >
+      <div className="mb-4">
+        <h3
+          className={`text-base font-medium ${isDestructive ? "text-destructive" : ""}`}
+        >
+          {title}
+        </h3>
+        <p className="text-muted-foreground text-xs">{description}</p>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   return (
-    <div className="@container/page flex flex-1 flex-col gap-8 p-6">
-      <Tabs defaultValue="account" className="gap-6">
-        <div
-          data-slot="dashboard-header"
-          className="flex items-center justify-between"
-        >
-          <TabsList>
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="notifications" className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>
-                Manage how you receive notifications.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form id="form-notifications" className="@container">
-                <FieldGroup>
-                  <Field>
-                    <Label htmlFor="channels">Notification Channels</Label>
-                    <FieldControl className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="notification-email" />
-                        <Label htmlFor="notification-email">Email</Label>
+    <div className="flex flex-1 flex-col p-4 md:p-6">
+      <div className="mb-6 flex flex-col space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">
+          Account Settings
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Manage your account preferences and security
+        </p>
+      </div>
+
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="bg-muted/60 mb-8 grid h-12 w-full grid-cols-3 rounded-lg p-1">
+          <TabsTrigger
+            value="profile"
+            className="data-[state=active]:bg-background rounded-md py-2.5 text-sm data-[state=active]:shadow-sm"
+          >
+            Profile
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="data-[state=active]:bg-background rounded-md py-2.5 text-sm data-[state=active]:shadow-sm"
+          >
+            Security
+          </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="data-[state=active]:bg-background rounded-md py-2.5 text-sm data-[state=active]:shadow-sm"
+          >
+            Notifications
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="min-h-[500px] transition-all duration-300 ease-in-out">
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="mt-0">
+            <div className="mx-auto max-w-xl">
+              <div className="space-y-8">
+                <SettingsCard
+                  title="Avatar"
+                  description="Click on the avatar to upload a custom one from your files."
+                >
+                  <UpdateAvatarCard />
+                </SettingsCard>
+
+                <SettingsCard
+                  title="Username"
+                  description="Enter the username you want to use to log in."
+                >
+                  <UpdateUsernameCard />
+                </SettingsCard>
+
+                <SettingsCard
+                  title="Email"
+                  description="Enter the email address you want to use to log in."
+                >
+                  <ChangeEmailCard />
+                </SettingsCard>
+
+                <SettingsCard
+                  title="Delete Account"
+                  description="Permanently delete your account"
+                  isDestructive
+                >
+                  <DeleteAccountCard />
+                </SettingsCard>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="mt-0">
+            <div className="mx-auto max-w-xl">
+              <div className="space-y-8">
+                <SettingsCard
+                  title="Password"
+                  description="Change your password"
+                >
+                  <ChangePasswordCard />
+                </SettingsCard>
+
+                <SettingsCard
+                  title="Login Providers"
+                  description="Manage sign-in services"
+                >
+                  <ProvidersCard />
+                </SettingsCard>
+
+                <SettingsCard
+                  title="Active Sessions"
+                  description="Manage active login sessions"
+                >
+                  <SessionsCard />
+                </SettingsCard>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="mt-0">
+            <div className="mx-auto max-w-xl">
+              <div className="space-y-8">
+                <SettingsCard
+                  title="Notification Settings"
+                  description="Customize notification preferences"
+                >
+                  <div className="space-y-8">
+                    <div>
+                      <SectionTitle>Delivery Methods</SectionTitle>
+                      <div className="space-y-4">
+                        <NotificationItem
+                          id="notification-email"
+                          title="Email Notifications"
+                          description="Updates via email"
+                          type="switch"
+                        />
+                        <NotificationItem
+                          id="notification-push"
+                          title="Push Notifications"
+                          description="Alerts on your devices"
+                          type="switch"
+                        />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="notification-sms" />
-                        <Label htmlFor="notification-sms">SMS</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="notification-push" />
-                        <Label htmlFor="notification-push">Push</Label>
-                      </div>
-                    </FieldControl>
-                    <FieldDescription>
-                      Choose how you want to receive notifications.
-                    </FieldDescription>
-                  </Field>
-                  <Field>
-                    <Label htmlFor="types">Notification Types</Label>
-                    <FieldControl className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="notification-account" />
-                        <Label htmlFor="notification-account">
-                          Account Activity
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    <div>
+                      <SectionTitle>Notification Types</SectionTitle>
+                      <div className="space-y-4">
+                        <NotificationItem
+                          id="notification-account"
+                          title="Account Activity"
+                          description="Sign-ins and account changes"
+                          type="checkbox"
+                        />
+                        <NotificationItem
                           id="notification-security"
+                          title="Security Alerts"
+                          description="Security-related notifications"
+                          type="checkbox"
                           defaultChecked
                           disabled
                         />
-                        <Label htmlFor="notification-security">
-                          Security Alerts
-                        </Label>
+                        <NotificationItem
+                          id="notification-marketing"
+                          title="Marketing & Updates"
+                          description="News about features"
+                          type="checkbox"
+                        />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="notification-marketing" />
-                        <Label htmlFor="notification-marketing">
-                          Marketing & Promotions
-                        </Label>
-                      </div>
-                    </FieldControl>
-                    <FieldDescription>
-                      Choose how you want to receive notifications.
-                    </FieldDescription>
-                  </Field>
-                </FieldGroup>
-              </form>
-            </CardContent>
-            <CardFooter className="border-t">
-              <Button
-                type="submit"
-                form="form-notifications"
-                variant="secondary"
-              >
-                Save changes
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        <TabsContent value="account" className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-              <CardDescription>
-                Make changes to your account here.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form id="form-account" className="@container">
-                <FieldGroup>
-                  <Field>
-                    <Label htmlFor="name">Name</Label>
-                    <FieldControl>
-                      <Input
-                        id="name"
-                        placeholder="First and last name"
-                        required
-                      />
-                    </FieldControl>
-                    <FieldDescription>
-                      This is your public display name.
-                    </FieldDescription>
-                  </Field>
-                  <Field>
-                    <Label htmlFor="email">Email</Label>
-                    <FieldControl>
-                      <Input
-                        id="email"
-                        placeholder="you@example.com"
-                        required
-                      />
-                    </FieldControl>
-                  </Field>
-                  <Field>
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <FieldControl>
-                      <Select>
-                        <SelectTrigger id="timezone">
-                          <SelectValue placeholder="Select a timezone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timezones.map((timezone) => (
-                            <SelectGroup key={timezone.label}>
-                              <SelectLabel>{timezone.label}</SelectLabel>
-                              {timezone.timezones.map((time) => (
-                                <SelectItem key={time.value} value={time.value}>
-                                  {time.label}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FieldControl>
-                  </Field>
-                </FieldGroup>
-              </form>
-            </CardContent>
-            <CardFooter className="border-t">
-              <Button type="submit" form="form-account" variant="secondary">
-                Save changes
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        <TabsContent
-          value="security"
-          className="@3xl/page:grid-cols-2 grid gap-6"
-        >
-          <Card className="@3xl/page:col-span-2">
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>
-                Make changes to your security settings here.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="@container">
-              <form id="form-security">
-                <FieldGroup>
-                  <Field>
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <FieldControl>
-                      <Input
-                        id="current-password"
-                        placeholder="Current password"
-                        required
-                      />
-                    </FieldControl>
-                    <FieldDescription>
-                      This is your current password.
-                    </FieldDescription>
-                  </Field>
-                  <Field>
-                    <Label htmlFor="new-password">New Password</Label>
-                    <FieldControl>
-                      <Input
-                        id="new-password"
-                        placeholder="New password"
-                        required
-                      />
-                    </FieldControl>
-                  </Field>
-                  <Field>
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <FieldControl>
-                      <Input
-                        id="confirm-password"
-                        placeholder="Confirm password"
-                      />
-                    </FieldControl>
-                  </Field>
-                  <Field>
-                    <FieldControl>
-                      <Switch
-                        id="enable-two-factor-auth"
-                        className="self-start"
-                      />
-                    </FieldControl>
-                    <Label htmlFor="enable-two-factor-auth">
-                      Enable two-factor authentication
-                    </Label>
-                    <FieldDescription>
-                      This will add an extra layer of security to your account.
-                      Make this an extra long description to test the layout.
-                    </FieldDescription>
-                  </Field>
-                </FieldGroup>
-              </form>
-            </CardContent>
-            <CardFooter className="border-t">
-              <Button type="submit" form="form-security" variant="secondary">
-                Save changes
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Login History</CardTitle>
-              <CardDescription>
-                Recent login activities on your account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="@md/page:table-cell hidden">
-                      IP
-                    </TableHead>
-                    <TableHead>Location</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loginHistory.map((login) => (
-                    <TableRow key={login.date}>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {new Date(login.date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                          <span className="@md/page:hidden flex">
-                            {login.ip}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="@md/page:table-cell hidden">
-                        {login.ip}
-                      </TableCell>
-                      <TableCell>{login.location}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Sessions</CardTitle>
-              <CardDescription>
-                Current active sessions on your account.
-              </CardDescription>
-              <CardAction>
-                <Button variant="outline" size="sm">
-                  <span className="@md/card-header:block hidden">
-                    Manage Sessions
-                  </span>
-                  <span className="@md/card-header:hidden block">Manage</span>
-                </Button>
-              </CardAction>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Device</TableHead>
-                    <TableHead>Browser</TableHead>
-                    <TableHead>OS</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeSessions.map((session) => (
-                    <TableRow key={session.device}>
-                      <TableCell>{session.device}</TableCell>
-                      <TableCell>{session.browser}</TableCell>
-                      <TableCell>{session.os}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    </div>
+                  </div>
+                  <div className="mt-8 flex justify-end">
+                    <Button type="button">Save Settings</Button>
+                  </div>
+                </SettingsCard>
+              </div>
+            </div>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
-  );
-}
-
-function FieldGroup({ children }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="field-group"
-      className="@container/field-group @3xl:gap-6 flex min-w-0 max-w-4xl flex-col gap-8"
-    >
-      {children}
-    </div>
-  );
-}
-
-function Field({ children, className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="field"
-      className={cn(
-        "@3xl/field-group:grid-cols-2 @3xl/field-group:gap-6 grid auto-rows-min items-start gap-3 *:data-[slot=label]:col-start-1 *:data-[slot=label]:row-start-1",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-function FieldControl({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="field-control"
-      className={cn(
-        "@3xl/field-group:col-start-2 @3xl/field-group:row-span-2 @3xl/field-group:row-start-1 @3xl/field-group:self-start",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-function FieldDescription({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"p">) {
-  return (
-    <p
-      data-slot="field-description"
-      className={cn(
-        "text-muted-foreground @3xl/field-group:col-start-1 @3xl/field-group:row-start-1 @3xl/field-group:translate-y-6 text-sm",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </p>
   );
 }

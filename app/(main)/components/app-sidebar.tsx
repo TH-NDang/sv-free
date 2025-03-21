@@ -1,70 +1,52 @@
 "use client";
 
-import * as React from "react";
 import {
-  ChartLineIcon,
-  FileIcon,
-  HomeIcon,
+  BookmarkIcon,
+  ClockIcon,
+  FileTextIcon,
+  FolderIcon,
   LifeBuoy,
-  Send,
-  Settings2Icon,
-  ShoppingBagIcon,
-  ShoppingCartIcon,
-  UserIcon,
+  UsersIcon,
 } from "lucide-react";
+import * as React from "react";
 
-import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { NavMain } from "@/app/(main)/components/nav-main";
 import { NavSecondary } from "@/app/(main)/components/nav-secondary";
+import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 
 const data = {
   navMain: [
     {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: HomeIcon,
+      title: "My Documents",
+      url: "/",
+      icon: FileTextIcon,
     },
     {
-      title: "Analytics",
-      url: "/dashboard/analytics",
-      icon: ChartLineIcon,
+      title: "Recent",
+      url: "/documents/recent",
+      icon: ClockIcon,
     },
     {
-      title: "Orders",
-      url: "/dashboard/orders",
-      icon: ShoppingBagIcon,
+      title: "Categories",
+      url: "/documents/categories",
+      icon: FolderIcon,
     },
     {
-      title: "Products",
-      url: "/dashboard/products",
-      icon: ShoppingCartIcon,
+      title: "Saved",
+      url: "/documents/saved",
+      icon: BookmarkIcon,
     },
     {
-      title: "Invoices",
-      url: "/dashboard/invoices",
-      icon: FileIcon,
-    },
-    {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: UserIcon,
-    },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings2Icon,
+      title: "Shared with Me",
+      url: "/documents/shared",
+      icon: UsersIcon,
     },
   ],
   navSecondary: [
     {
-      title: "Support",
+      title: "Help",
       url: "#",
       icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
     },
   ],
 };

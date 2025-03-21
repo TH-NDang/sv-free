@@ -1,9 +1,14 @@
 "use client";
 
-import { Fragment, useMemo } from "react";
+import { PlusIcon, ShareIcon, SidebarIcon, UploadIcon } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SidebarIcon } from "lucide-react";
+import { Fragment, useMemo } from "react";
 
+import { ModeToggle } from "@/app/(main)/components/mode-toggle";
+import { NavUser } from "@/app/(main)/components/nav-user";
+import { SearchForm } from "@/components/demo/search-form";
+import { ThemeSelector } from "@/components/theme-selector";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,12 +18,20 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
-import { ThemeSelector } from "@/components/theme-selector";
-import { SearchForm } from "@/components/demo/search-form";
-import { ModeToggle } from "@/app/(main)/components/mode-toggle";
-import { NavUser } from "@/app/(main)/components/nav-user";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar();
@@ -48,7 +61,7 @@ export function SiteHeader() {
           className="gap-2.5 has-[>svg]:px-2"
         >
           <SidebarIcon />
-          <span className="truncate font-medium">Acme Inc</span>
+          <span className="truncate font-medium">Document Library</span>
         </Button>
         <Separator
           orientation="vertical"
@@ -86,16 +99,44 @@ export function SiteHeader() {
           </BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
-          <SearchForm className="w-fullsm:w-auto" />
+          <SearchForm className="w-full sm:w-auto" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="ml-2">
+                <PlusIcon className="mr-1 h-4 w-4" />
+                <span className="hidden sm:inline">Add Document</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Link href="/documents/upload">
+                <DropdownMenuItem>
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  <span>Upload File</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem>
+                <ShareIcon className="mr-2 h-4 w-4" />
+                <span>Request Document</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Create Folder</DropdownMenuItem>
+              <DropdownMenuItem>Create Collection</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="ml-1">
+                <ShareIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Share Document</TooltipContent>
+          </Tooltip>
+
           <ThemeSelector />
           <ModeToggle />
-          <NavUser
-            user={{
-              name: "shadcn",
-              email: "m@example.com",
-              avatar: "/avatars/shadcn.jpg",
-            }}
-          />
+          <NavUser />
         </div>
       </div>
     </header>

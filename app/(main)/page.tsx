@@ -1,201 +1,198 @@
-import { Metadata } from "next";
+"use client";
+
 import {
-  DownloadIcon,
-  FilterIcon,
-  TrendingDownIcon,
+  ClockIcon,
+  FolderIcon,
+  ListIcon,
+  PlusIcon,
   TrendingUpIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
+import { DocumentsGrid } from "@/app/(main)/components/documents-grid";
+import { generateSampleDocuments } from "@/app/(main)/types/document";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnalyticsDatePicker } from "@/app/(main)/components/analytics-date-picker";
-import { ChartRevenue } from "@/app/(main)/components/chart-revenue";
-import { ChartVisitors } from "@/app/(main)/components/chart-visitors";
-import { ProductsTable } from "@/app/(main)/components/products-table";
+import { DocumentsTable } from "./components/documents-table";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "An example dashboard to test the new components.",
-};
+// Generate sample documents
+const documents = generateSampleDocuments(20);
 
-// Load from database.
-const products = [
-  {
-    id: "1",
-    name: "BJÖRKSNÄS Dining Table",
-    price: 599.99,
-    stock: 12,
-    dateAdded: "2023-06-15",
-    status: "In Stock",
-  },
-  {
-    id: "2",
-    name: "POÄNG Armchair",
-    price: 249.99,
-    stock: 28,
-    dateAdded: "2023-07-22",
-    status: "In Stock",
-  },
-  {
-    id: "3",
-    name: "MALM Bed Frame",
-    price: 399.99,
-    stock: 15,
-    dateAdded: "2023-08-05",
-    status: "In Stock",
-  },
-  {
-    id: "4",
-    name: "KALLAX Shelf Unit",
-    price: 179.99,
-    stock: 32,
-    dateAdded: "2023-09-12",
-    status: "In Stock",
-  },
-  {
-    id: "5",
-    name: "STOCKHOLM Rug",
-    price: 299.99,
-    stock: 8,
-    dateAdded: "2023-10-18",
-    status: "Low Stock",
-  },
-  {
-    id: "6",
-    name: "KIVIK Sofa",
-    price: 899.99,
-    stock: 6,
-    dateAdded: "2023-11-02",
-    status: "Low Stock",
-  },
-  {
-    id: "7",
-    name: "LISABO Coffee Table",
-    price: 149.99,
-    stock: 22,
-    dateAdded: "2023-11-29",
-    status: "In Stock",
-  },
-  {
-    id: "8",
-    name: "HEMNES Bookcase",
-    price: 249.99,
-    stock: 17,
-    dateAdded: "2023-12-10",
-    status: "In Stock",
-  },
-  {
-    id: "9",
-    name: "EKEDALEN Dining Chairs (Set of 2)",
-    price: 199.99,
-    stock: 14,
-    dateAdded: "2024-01-05",
-    status: "In Stock",
-  },
-  {
-    id: "10",
-    name: "FRIHETEN Sleeper Sofa",
-    price: 799.99,
-    stock: 9,
-    dateAdded: "2024-01-18",
-    status: "Low Stock",
-  },
-];
+export default function DocumentLibraryPage() {
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<"grid" | "table">("grid");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
 
-export default function DashboardPage() {
+  // Get search query from URL params
+  const searchQuery = searchParams.get("q") || "";
+
+  // Filter documents based on search query and/or category
+  const filteredDocuments = documents.filter((doc) => {
+    // First check category filter
+    const matchesCategory =
+      activeCategory === "all" ||
+      doc.category.toLowerCase() === activeCategory.toLowerCase();
+
+    // If no search query, just return category matches
+    if (!searchQuery) return matchesCategory;
+
+    // Otherwise, check if document matches search query and category
+    const matchesSearch =
+      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.author.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
+
+  // Get recent documents (last 5)
+  const recentDocuments = [...documents]
+    .sort(
+      (a, b) =>
+        new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
+    )
+    .slice(0, 5);
+
+  // Get popular documents (top 5 by download count)
+  const popularDocuments = [...documents]
+    .sort((a, b) => b.downloadCount - a.downloadCount)
+    .slice(0, 5);
+
+  const uniqueCategories = [...new Set(documents.map((doc) => doc.category))];
+
   return (
-    <div className="@container/page flex flex-1 flex-col gap-8 p-6">
-      <Tabs defaultValue="overview" className="gap-6">
-        <div
-          data-slot="dashboard-header"
-          className="flex items-center justify-between"
-        >
-          <TabsList className="@3xl/page:w-fit w-full">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="exports" disabled>
-              Exports
-            </TabsTrigger>
-          </TabsList>
-          <div className="@3xl/page:flex hidden items-center gap-2">
-            <AnalyticsDatePicker />
-            <Button variant="outline">
-              <FilterIcon />
-              Filter
+    <div className="flex flex-1 flex-col gap-6 p-6">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Document Library
+          </h1>
+          <p className="text-muted-foreground">
+            {searchQuery
+              ? `Search results for "${searchQuery}" - ${filteredDocuments.length} documents found`
+              : "Search, browse and download your documents"}
+          </p>
+        </div>
+        <Link href="/documents/upload">
+          <Button className="mt-2 md:mt-0">
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Upload Document
+          </Button>
+        </Link>
+      </div>
+
+      {/* Category tabs */}
+      <div className="flex overflow-auto pb-1">
+        <div className="bg-card inline-flex h-10 items-center justify-center rounded-lg p-1">
+          <Button
+            variant={activeCategory === "all" ? "default" : "ghost"}
+            className="rounded-md px-3"
+            onClick={() => setActiveCategory("all")}
+          >
+            All Documents
+          </Button>
+          {uniqueCategories.map((category) => (
+            <Button
+              key={category}
+              variant={
+                activeCategory === category.toLowerCase() ? "default" : "ghost"
+              }
+              className="rounded-md px-3"
+              onClick={() => setActiveCategory(category.toLowerCase())}
+            >
+              {category}
             </Button>
-            <Button variant="outline">
-              <DownloadIcon />
-              Export
-            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="bg-card flex flex-col rounded-lg border p-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+              <FolderIcon className="text-primary h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold">Browse Documents</h3>
+              <p className="text-muted-foreground mt-1">
+                Browse through {filteredDocuments.length} documents in your
+                library
+              </p>
+            </div>
           </div>
         </div>
-        <TabsContent value="overview" className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Revenue</CardTitle>
-                <CardDescription>$1,250.00 in the last 30 days</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Badge variant="outline">
-                  <TrendingUpIcon />
-                  +12.5%
-                </Badge>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>New Customers</CardTitle>
-                <CardDescription>-12 customers from last month</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Badge variant="outline">
-                  <TrendingDownIcon />
-                  -20%
-                </Badge>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Accounts</CardTitle>
-                <CardDescription>+2,345 users from last month</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Badge variant="outline">
-                  <TrendingUpIcon />
-                  +12.5%
-                </Badge>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Growth Rate</CardTitle>
-                <CardDescription>+12.5% increase per month</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Badge variant="outline">
-                  <TrendingUpIcon />
-                  +4.5%
-                </Badge>
-              </CardFooter>
-            </Card>
+
+        <div className="bg-card flex flex-col rounded-lg border p-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+              <ClockIcon className="text-primary h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold">Recent Documents</h3>
+              <p className="text-muted-foreground mt-1">
+                {recentDocuments.length} new documents added recently
+              </p>
+            </div>
           </div>
-          <div className="@4xl/page:grid-cols-[2fr_1fr] grid grid-cols-1 gap-4">
-            <ChartRevenue />
-            <ChartVisitors />
+        </div>
+
+        <div className="bg-card flex flex-col rounded-lg border p-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+              <TrendingUpIcon className="text-primary h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold">Popular Documents</h3>
+              <p className="text-muted-foreground mt-1">
+                {popularDocuments.length > 0
+                  ? `${popularDocuments[0].title} is the most downloaded document`
+                  : "No popular documents yet"}
+              </p>
+            </div>
           </div>
-          <ProductsTable products={products} />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
+
+      {/* Filtering and view controls */}
+      <div className="flex justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setView(view === "grid" ? "table" : "grid")}
+        >
+          {view === "grid" ? (
+            <ListIcon className="mr-2 h-4 w-4" />
+          ) : (
+            <ListIcon className="mr-2 h-4 w-4" />
+          )}
+          {view === "grid" ? "Table View" : "Grid View"}
+        </Button>
+      </div>
+
+      {/* Document listing */}
+      <div className="min-h-[300px]">
+        {filteredDocuments.length > 0 ? (
+          view === "grid" ? (
+            <DocumentsGrid documents={filteredDocuments} />
+          ) : (
+            <DocumentsTable documents={filteredDocuments} />
+          )
+        ) : (
+          <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed">
+            <div className="text-center">
+              <h3 className="text-lg font-medium">No documents found</h3>
+              <p className="text-muted-foreground mt-1">
+                {searchQuery
+                  ? "Try different search terms"
+                  : "Try selecting a different category"}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

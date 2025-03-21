@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "svfree",
-  url: "https://svfree.com",
-  ogImage: "https://svfree.com/og.jpg",
+  url: "https://svfree.wfip.tech",
+  ogImage: "https://svfree.wfip.tech/og.jpg",
   description:
     "Đây là nơi chia sẻ tài liệu học tập miễn phí, nơi sinh viên có thể tìm thấy tài liệu học tập miễn phí, nơi mà mọi người có thể chia sẻ tài liệu học tập miễn phí.",
   links: {

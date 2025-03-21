@@ -4,19 +4,14 @@ import { cookies } from "next/headers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
-import "@/styles/globals.css";
-import { fontVariables } from "@/lib/fonts";
 import { ActiveThemeProvider } from "@/components/active-theme";
-import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@/components/analytics";
-import { siteConfig } from "@/config/site";
 import { Providers } from "@/components/providers";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
-
-const META_THEME_COLORS = {
-  light: "#ffffff",
-  dark: "#09090b",
-};
+import { Toaster } from "@/components/ui/sonner";
+import { META_THEME_COLORS, siteConfig } from "@/config/site";
+import { fontVariables } from "@/lib/fonts";
+import "@/styles/globals.css";
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
@@ -27,7 +22,7 @@ export const metadata: Metadata = {
     default: siteConfig.name,
     template: `%s - ${siteConfig.name}`,
   },
-  metadataBase: new URL("https://svfree.com"),
+  metadataBase: new URL("https://svfree.wfip.tech"),
   description: siteConfig.description,
   keywords: [
     "SVFree",
@@ -39,20 +34,20 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "svfree",
-      url: "https://svfree.com",
+      url: "https://svfree.wfip.tech",
     },
   ],
   creator: "svfree",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://svfree.com",
+    url: "https://svfree.wfip.tech",
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
     images: [
       {
-        url: "https://svfree/opengraph-image.png",
+        url: "https://svfree.wfip.tech/opengraph-image.png",
         width: 1200,
         height: 630,
         alt: siteConfig.name,
@@ -63,8 +58,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: ["https://svfree/opengraph-image.png"],
-    creator: "@shadcn",
+    images: ["https://svfree.wfip.tech/opengraph-image.png"],
+    creator: "@svfree",
   },
   icons: {
     icon: "/favicon.ico",

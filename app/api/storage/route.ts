@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { DOCUMENTS_BUCKET, supabase } from "@/lib/supabase";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -23,7 +22,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ url: data.signedUrl });
-  } catch {
+  } catch (error) {
+    console.error("Error creating signed URL:", error);
     return NextResponse.json(
       { error: "Failed to get file URL" },
       { status: 500 }
@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(path);
 
     return NextResponse.json({ url: data.publicUrl });
-  } catch {
+  } catch (error) {
+    console.error("Error getting public URL:", error);
     return NextResponse.json(
       { error: "Failed to get public URL" },
       { status: 500 }

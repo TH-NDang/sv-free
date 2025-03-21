@@ -1,11 +1,11 @@
+import { env } from "@/env";
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize the Supabase client - replace with your actual Supabase URL and anon key
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 // Create a single supabase client for the entire app
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 // Storage bucket name for documents
 export const DOCUMENTS_BUCKET = "documents";

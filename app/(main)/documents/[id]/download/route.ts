@@ -5,12 +5,15 @@ import { NextRequest, NextResponse } from "next/server";
 // In a real app, you would fetch the document from storage and stream it to the client
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get the id from params
+    const { id } = await params;
+
     // Simulate fetching the document
     const documents = generateSampleDocuments(20);
-    const document = documents.find((d) => d.id === params.id);
+    const document = documents.find((d) => d.id === id);
 
     if (!document) {
       return NextResponse.json(

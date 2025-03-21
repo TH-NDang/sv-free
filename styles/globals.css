@@ -3,6 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@import "./shadcn-themes.css";
+@import "./theme.css";
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

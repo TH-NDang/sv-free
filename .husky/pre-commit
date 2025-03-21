@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Ensure this script runs with the correct shell on Windows
+if [ -z "$BASH" ] && [ -z "$ZSH_VERSION" ]; then
+  exec bash "$0" "$@"
+fi
+
+pnpm lint-staged

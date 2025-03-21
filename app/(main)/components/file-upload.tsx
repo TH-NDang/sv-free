@@ -22,6 +22,7 @@ import MultipleSelector, { Option } from "@/components/ui/multiselect";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { uploadFile } from "@/lib/supabase";
+import { env } from "@/env/client";
 
 interface FileUploadProps {
   onFileUploaded?: (fileUrl: string, fileData: FileData) => void;
@@ -223,7 +224,7 @@ export function FileUpload({
         await uploadFile(file, filePath);
 
         // Get the public URL of the uploaded file
-        const fileUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/documents/${filePath}`;
+        const fileUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/documents/${filePath}`;
 
         setProgress(100);
         clearInterval(progressInterval);

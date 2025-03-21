@@ -1,10 +1,10 @@
-import { env } from "@/env";
+import { env } from "@/env/client";
 import { createClient } from "@supabase/supabase-js";
 
 // Create a single supabase client for the entire app
 export const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  env.NEXT_PUBLIC_SUPABASE_URL || "",
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
 // Storage bucket name for documents

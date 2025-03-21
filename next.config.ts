@@ -10,11 +10,17 @@ if (process.env.GITHUB_ACTIONS === "true") {
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["loremflickr.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "loremflickr.com",
+      },
+      {
+        protocol: "https",
+        hostname: "svfree.wfip.tech",
+      },
+    ],
   },
-  output: "standalone",
-  // Add the packages in transpilePackages
-  transpilePackages: ["@t3-oss/env-nextjs", "@t3-oss/env-core"],
 };
 
 export default nextConfig;

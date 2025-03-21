@@ -31,7 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
         return data.url;
       }}
-      // settingsUrl="/dashboard/settings/user"
+      settingsUrl="/settings"
       LinkComponent={Link}
     >
       <QueryProvider>{children}</QueryProvider>

@@ -1,8 +1,14 @@
+import { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/app/(main)/components/app-sidebar";
 import { SiteHeader } from "@/app/(main)/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
+export const metadata: Metadata = {
+  title: "Document Library",
+  description: "A curated collection of educational resources and documents.",
+};
 
 export default async function DashboardLayout({
   children,

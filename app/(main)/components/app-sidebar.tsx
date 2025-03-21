@@ -1,70 +1,59 @@
 "use client";
 
-import * as React from "react";
 import {
-  ChartLineIcon,
-  FileIcon,
+  BookmarkIcon,
+  FileTextIcon,
   HomeIcon,
   LifeBuoy,
-  Send,
-  Settings2Icon,
-  ShoppingBagIcon,
-  ShoppingCartIcon,
-  UserIcon,
+  SearchIcon,
+  UploadIcon,
 } from "lucide-react";
+import * as React from "react";
 
-import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { NavMain } from "@/app/(main)/components/nav-main";
 import { NavSecondary } from "@/app/(main)/components/nav-secondary";
+import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 
 const data = {
   navMain: [
     {
-      title: "Dashboard",
-      url: "/dashboard",
+      title: "Home",
+      url: "/",
       icon: HomeIcon,
     },
     {
-      title: "Analytics",
-      url: "/dashboard/analytics",
-      icon: ChartLineIcon,
+      title: "Browse Documents",
+      url: "/documents",
+      icon: FileTextIcon,
     },
     {
-      title: "Orders",
-      url: "/dashboard/orders",
-      icon: ShoppingBagIcon,
+      title: "Advanced Search",
+      url: "/search",
+      icon: SearchIcon,
     },
     {
-      title: "Products",
-      url: "/dashboard/products",
-      icon: ShoppingCartIcon,
+      title: "Upload Document",
+      url: "/documents/upload",
+      icon: UploadIcon,
+    },
+  ],
+  navProfile: [
+    {
+      title: "My Uploads",
+      url: "/profile?tab=uploads",
+      icon: FileTextIcon,
     },
     {
-      title: "Invoices",
-      url: "/dashboard/invoices",
-      icon: FileIcon,
-    },
-    {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: UserIcon,
-    },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings2Icon,
+      title: "Saved Documents",
+      url: "/profile?tab=saved",
+      icon: BookmarkIcon,
     },
   ],
   navSecondary: [
     {
-      title: "Support",
+      title: "Help & Support",
       url: "#",
       icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
     },
   ],
 };
@@ -76,9 +65,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain label="Discovery" items={data.navMain} />
+        <NavMain label="Personal" items={data.navProfile} />
+
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
+      <SidebarRail />
     </Sidebar>
   );
 }

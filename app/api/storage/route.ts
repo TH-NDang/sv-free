@@ -1,7 +1,25 @@
 import { DOCUMENTS_BUCKET, supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper to check if Supabase is properly configured
+function isSupabaseConfigured() {
+  try {
+    const hasConfig = !!supabase && typeof supabase.storage === "object";
+    return hasConfig;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
+  // Check if Supabase is properly configured
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json(
+      { error: "Storage service unavailable" },
+      { status: 503 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const path = searchParams.get("path");
 
@@ -32,6 +50,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Check if Supabase is properly configured
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json(
+      { error: "Storage service unavailable" },
+      { status: 503 }
+    );
+  }
+
   try {
     const { path } = await request.json();
 

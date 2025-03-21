@@ -1,11 +1,12 @@
 import { env } from "@/env/client";
 import { createClient } from "@supabase/supabase-js";
 
+// Handle potential undefined values in CI environment
+const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
 // Create a single supabase client for the entire app
-export const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL || "",
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Storage bucket name for documents
 export const DOCUMENTS_BUCKET = "documents";

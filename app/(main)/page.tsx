@@ -8,6 +8,7 @@ import {
   SearchIcon,
   TrendingUpIcon,
 } from "lucide-react";
+import { Metadata } from "next";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -16,9 +17,27 @@ import { generateSampleDocuments } from "@/app/(main)/types/document";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { siteConfig } from "@/config/site";
 
 // Generate sample documents (in a real app, this would be fetched from an API)
 const documents = generateSampleDocuments(20);
+
+export const metadata: Metadata = {
+  title: "Trang chủ",
+  description: siteConfig.description,
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [
+      {
+        url: `${siteConfig.url}/opengraph-image.png`,
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
+  },
+};
 
 export default function HomePage() {
   const searchParams = useSearchParams();

@@ -1,9 +1,9 @@
 export const siteConfig = {
-  name: "svfree",
+  name: "SVFree",
   url: "https://svfree.wfip.tech",
-  ogImage: "https://svfree.wfip.tech/og.jpg",
+  ogImage: "https://svfree.wfip.tech/opengraph-image.png",
   description:
-    "Đây là nơi chia sẻ tài liệu học tập miễn phí, nơi sinh viên có thể tìm thấy tài liệu học tập miễn phí, nơi mà mọi người có thể chia sẻ tài liệu học tập miễn phí.",
+    "SVFree - Web chia sẻ tài liệu học tập miễn phí, kho tài nguyên dành cho sinh viên với đầy đủ tài liệu chất lượng cao.",
   links: {
     twitter: "https://twitter.com/svfree",
     github: "https://github.com/svfree/ui",

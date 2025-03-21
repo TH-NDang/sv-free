@@ -15,6 +15,9 @@ import "@/styles/globals.css";
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export const metadata: Metadata = {
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
     default: siteConfig.name,
     template: `%s - ${siteConfig.name}`,
   },
-  metadataBase: new URL("https://svfree.wfip.tech"),
+  metadataBase: new URL(siteConfig.url),
   description: siteConfig.description,
   keywords: [
     "SVFree",
@@ -34,20 +37,20 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "svfree",
-      url: "https://svfree.wfip.tech",
+      url: siteConfig.url,
     },
   ],
   creator: "svfree",
   openGraph: {
     type: "website",
-    locale: "en_US",
-    url: "https://svfree.wfip.tech",
+    locale: "vi_VN",
+    url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
     images: [
       {
-        url: "https://svfree.wfip.tech/opengraph-image.png",
+        url: `${siteConfig.url}/opengraph-image.png`,
         width: 1200,
         height: 630,
         alt: siteConfig.name,
@@ -58,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: ["https://svfree.wfip.tech/opengraph-image.png"],
+    images: [`${siteConfig.url}/opengraph-image.png`],
     creator: "@svfree",
   },
   icons: {
@@ -67,6 +70,9 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: `${siteConfig.url}/site.webmanifest`,
+  alternates: {
+    canonical: siteConfig.url,
+  },
 };
 
 export default async function RootLayout({
@@ -79,7 +85,7 @@ export default async function RootLayout({
   const isScaled = activeThemeValue?.endsWith("-scaled");
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -90,6 +96,26 @@ export default async function RootLayout({
                 }
               } catch (_) {}
             `,
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: siteConfig.name,
+              url: siteConfig.url,
+              description: siteConfig.description,
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: `${siteConfig.url}/search?q={search_term_string}`,
+                },
+                "query-input": "required name=search_term_string",
+              },
+            }),
           }}
         />
       </head>

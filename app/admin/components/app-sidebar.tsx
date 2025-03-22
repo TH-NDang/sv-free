@@ -1,24 +1,23 @@
 "use client";
 
-import * as React from "react";
 import {
-  IconCamera,
+  IconCategory,
   IconChartBar,
   IconDashboard,
   IconDatabase,
-  IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
-  IconHelp,
   IconInnerShadowTop,
-  IconListDetails,
   IconReport,
-  IconSearch,
-  IconSettings,
+  IconShieldCheck,
+  IconTag,
   IconUsers,
 } from "@tabler/icons-react";
+import * as React from "react";
 
+import { NavDocuments } from "@/app/admin/components/nav-documents";
+import { NavMain } from "@/app/admin/components/nav-main";
+import { NavSecondary } from "@/app/admin/components/nav-secondary";
 import {
   Sidebar,
   SidebarContent,
@@ -28,123 +27,67 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { NavDocuments } from "@/app/admin/components/nav-documents";
-import { NavMain } from "@/app/admin/components/nav-main";
-import { NavSecondary } from "@/app/admin/components/nav-secondary";
-import { NavUser } from "@/app/admin/components/nav-user";
+import { UserButton } from "@daveyplate/better-auth-ui";
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Admin",
+    email: "admin@example.com",
+    avatar: "/avatars/admin.jpg",
   },
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/admin",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Users",
+      url: "/admin/users",
+      icon: IconUsers,
+    },
+    {
+      title: "Documents",
+      url: "/admin/documents",
+      icon: IconFileDescription,
+    },
+    {
+      title: "Categories",
+      url: "/admin/categories",
+      icon: IconCategory,
+    },
+    {
+      title: "Tags",
+      url: "/admin/tags",
+      icon: IconTag,
     },
     {
       title: "Analytics",
-      url: "#",
+      url: "/admin/analytics",
       icon: IconChartBar,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
     },
   ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
+      title: "Permissions",
+      url: "/admin/permissions",
+      icon: IconShieldCheck,
     },
   ],
   documents: [
     {
-      name: "Data Library",
-      url: "#",
+      name: "Export Data",
+      url: "/admin/exports",
       icon: IconDatabase,
     },
     {
       name: "Reports",
-      url: "#",
+      url: "/admin/reports",
       icon: IconReport,
     },
     {
-      name: "Word Assistant",
-      url: "#",
+      name: "Logs",
+      url: "/admin/logs",
       icon: IconFileWord,
     },
   ],
@@ -160,9 +103,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <a href="/admin">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="text-base font-semibold">Admin Panel</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -174,7 +117,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <UserButton size="full" />
       </SidebarFooter>
     </Sidebar>
   );

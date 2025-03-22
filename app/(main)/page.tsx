@@ -9,6 +9,8 @@ import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+export const experimental_ppr = true;
+
 // Metadata được định nghĩa trực tiếp trong Server Component
 export const metadata: Metadata = {
   title: "Trang chủ",

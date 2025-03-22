@@ -1,0 +1,287 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Component Guidelines
+
+## Component Structure
+
+Components in SVFree should follow these structural guidelines:
+
+- One component per file (except for tightly related subcomponents)
+- Use named exports for components
+- Place components in the `components` directory or relevant feature directory
+- Follow the naming convention: `ComponentName.tsx`
+
+## Directory Structure
+
+```
+components/
+├── ui/               # Reusable UI components (from shadcn/ui)
+├── layout/           # Layout components (Header, Footer, etc.)
+├── auth/             # Authentication components
+├── documents/        # Document-related components
+├── forms/            # Form components
+```
+
+## Component Types
+
+### Server Components (Default)
+
+- Use Server Components by default for better performance
+- No need for `"use client"` directive
+- Cannot use hooks, event handlers, or browser APIs
+
+```tsx
+// components/documents/document-list.tsx
+import { db } from "@/lib/db";
+
+export async function DocumentList() {
+  const documents = await db.documents.findMany();
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {documents.map((document) => (
+        <DocumentCard key={document.id} document={document} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Client Components
+
+- Add `"use client"` directive at the top of the file
+- Use for interactive components that need hooks or event handlers
+- Keep client components small and focused
+
+```tsx
+// components/forms/search-form.tsx
+"use client";
+
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export function SearchForm({ onSearch }) {
+  const [query, setQuery] = useState("");
+
+  return (
+    <form
+      className="flex gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSearch(query);
+      }}
+    >
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search documents..."
+      />
+      <Button type="submit">Search</Button>
+    </form>
+  );
+}
+```
+
+## Component Patterns
+
+### Props and TypeScript
+
+- Define prop types using TypeScript interfaces
+- Use default props when appropriate
+- Destructure props in function parameters
+
+```tsx
+interface ButtonProps {
+  variant?: "default" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+export function Button({
+  variant = "default",
+  size = "md",
+  children,
+  onClick,
+}: ButtonProps) {
+  // Component implementation
+}
+```
+
+### Error Boundaries
+
+Wrap components that might error in error boundaries to prevent entire page crashes:
+
+```tsx
+// components/error-boundary.tsx
+"use client";
+
+import { ErrorBoundary } from "react-error-boundary";
+
+export function DocumentWithErrorBoundary({ children }) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="rounded border border-red-200 bg-red-50 p-4 text-red-800">
+          Something went wrong loading this document.
+        </div>
+      }
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}
+```
+
+## UI Component Library
+
+SVFree uses [shadcn/ui](mdc:https:/ui.shadcn.com) for consistent, accessible UI components. These are integrated directly into the codebase (not installed as a dependency).
+
+### Using shadcn/ui Components
+
+- Import components from the local `@/components/ui` directory
+- Follow the shadcn/ui documentation for usage examples
+- Customize components using Tailwind classes
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export function Form() {
+  return (
+    <div className="space-y-4">
+      <Input placeholder="Enter your name" />
+      <Button>Submit</Button>
+    </div>
+  );
+}
+```
+
+## Authentication Components
+
+SVFree uses Better Auth UI to provide a consistent authentication experience with minimal setup. Better Auth UI offers shadcn/ui-styled authentication components that integrate with the app's authentication system.
+
+### Auth Component Integration
+
+```tsx
+// lib/auth/auth-config.ts
+import { createBetterAuth } from "better-auth-ui";
+import { createClient } from "@supabase/supabase-js";
+import { env } from "@/env.mjs";
+
+const supabase = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+export const {
+  SignIn,
+  SignUp,
+  ForgotPassword,
+  ResetPassword,
+  UserButton,
+  authComponents,
+} = createBetterAuth({
+  auth: {
+    type: "supabase",
+    supabase,
+    callbacks: {
+      onSignIn: async ({ user }) => {
+        return { success: true, redirect: "/dashboard" };
+      },
+      onSignUp: async ({ user }) => {
+        return { success: true, redirect: "/onboarding" };
+      },
+    },
+  },
+  appearance: {
+    theme: "system",
+    accentColor: "#0284c7", // sky-600
+    borderRadius: "md",
+  },
+  features: {
+    emailSignIn: true,
+    googleSignIn: true,
+    emailSignUp: true,
+    forgotPassword: true,
+  },
+});
+```
+
+### Authentication Pages
+
+```tsx
+// app/(auth)/sign-in/page.tsx
+import { SignIn } from "@/lib/auth/auth-config";
+
+export default function SignInPage() {
+  return (
+    <div className="container flex h-screen items-center justify-center py-12">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Welcome back</h1>
+          <p className="text-muted-foreground mt-2">
+            Sign in to access educational resources
+          </p>
+        </div>
+        <SignIn />
+      </div>
+    </div>
+  );
+}
+```
+
+### User Menu Component
+
+```tsx
+// components/layout/site-header.tsx
+import { UserButton } from "@/lib/auth/auth-config";
+
+export function SiteHeader() {
+  return (
+    <header className="bg-background sticky top-0 z-40 w-full border-b">
+      <div className="container flex h-16 items-center justify-between">
+        {/* Other header content */}
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      </div>
+    </header>
+  );
+}
+```
+
+## Accessibility
+
+- Use semantic HTML elements
+- Include ARIA attributes when necessary
+- Ensure proper keyboard navigation
+- Maintain color contrast ratios
+- Test with screen readers
+
+## Component Documentation
+
+Add JSDoc comments to document component props and usage:
+
+```tsx
+/**
+ * Displays a paginated list of documents with filtering options
+ *
+ * @param {Object} props - Component props
+ * @param {number} props.limit - Number of documents per page
+ * @param {string} props.categoryId - Optional category ID to filter by
+ * @param {boolean} props.showFilters - Whether to show filtering options
+ */
+export function DocumentList({
+  limit = 10,
+  categoryId,
+  showFilters = true,
+}: DocumentListProps) {
+  // Component implementation
+}
+```

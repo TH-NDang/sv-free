@@ -1,0 +1,360 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# State Management with Zustand
+
+## Introduction to Zustand
+
+Zustand is a simple, lightweight, and flexible state management library for React. SVFree uses Zustand to manage global application state.
+
+## Store Structure
+
+All stores are placed in the `lib/store` directory:
+
+```
+lib/
+└── store/
+    ├── use-document-store.ts
+    ├── use-user-store.ts
+    ├── use-theme-store.ts
+    └── use-filter-store.ts
+```
+
+## Creating a Basic Store
+
+```typescript
+// lib/store/use-document-store.ts
+import { create } from "zustand";
+import { getDocuments } from "@/lib/db/queries/documents";
+
+interface Document {
+  id: string;
+  title: string;
+  description?: string;
+  fileUrl: string;
+  categoryId?: string;
+  createdAt: Date;
+}
+
+interface DocumentFilters {
+  categoryId?: string;
+  searchTerm?: string;
+}
+
+interface DocumentStore {
+  // State
+  documents: Document[];
+  isLoading: boolean;
+  error: Error | null;
+  filters: DocumentFilters;
+
+  // Actions
+  fetchDocuments: () => Promise<void>;
+  setFilters: (filters: Partial<DocumentFilters>) => void;
+  clearFilters: () => void;
+}
+
+export const useDocumentStore = create<DocumentStore>((set, get) => ({
+  // Default state
+  documents: [],
+  isLoading: false,
+  error: null,
+  filters: {
+    categoryId: undefined,
+    searchTerm: undefined,
+  },
+
+  // Actions
+  fetchDocuments: async () => {
+    const { filters } = get();
+
+    try {
+      set({ isLoading: true, error: null });
+
+      const documents = await getDocuments({
+        categoryId: filters.categoryId,
+        searchTerm: filters.searchTerm,
+      });
+
+      set({ documents, isLoading: false });
+    } catch (error) {
+      set({ error: error as Error, isLoading: false });
+    }
+  },
+
+  setFilters: (newFilters) => {
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    }));
+
+    // Automatically fetch when filter changes
+    get().fetchDocuments();
+  },
+
+  clearFilters: () => {
+    set({
+      filters: {
+        categoryId: undefined,
+        searchTerm: undefined,
+      },
+    });
+
+    get().fetchDocuments();
+  },
+}));
+```
+
+## Persistence (Storage in localStorage)
+
+```typescript
+// lib/store/use-theme-store.ts
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+type Theme = "light" | "dark" | "system";
+
+interface ThemeStore {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+}
+
+export const useThemeStore = create<ThemeStore>()(
+  persist(
+    (set) => ({
+      theme: "system",
+      setTheme: (theme) => set({ theme }),
+    }),
+    {
+      name: "theme-storage", // key name in localStorage
+    }
+  )
+);
+```
+
+## Devtools for Debugging
+
+```typescript
+// lib/store/use-filter-store.ts
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+
+interface FilterStore {
+  searchTerm: string;
+  categoryId: string | null;
+  sortBy: "newest" | "oldest" | "name";
+
+  setSearchTerm: (term: string) => void;
+  setCategoryId: (id: string | null) => void;
+  setSortBy: (sort: "newest" | "oldest" | "name") => void;
+  resetFilters: () => void;
+}
+
+export const useFilterStore = create<FilterStore>()(
+  devtools(
+    (set) => ({
+      searchTerm: "",
+      categoryId: null,
+      sortBy: "newest",
+
+      setSearchTerm: (term) => set({ searchTerm: term }),
+      setCategoryId: (id) => set({ categoryId: id }),
+      setSortBy: (sort) => set({ sortBy: sort }),
+      resetFilters: () =>
+        set({
+          searchTerm: "",
+          categoryId: null,
+          sortBy: "newest",
+        }),
+    }),
+    {
+      name: "filter-store", // display name in Redux DevTools
+    }
+  )
+);
+```
+
+## Separating Logic with Selectors
+
+```typescript
+// lib/store/use-user-store.ts
+import { create } from "zustand";
+import { createSelectors } from "@/lib/utils/create-selectors";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "user";
+}
+
+interface UserStore {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+
+  setUser: (user: User | null) => void;
+  logout: () => void;
+}
+
+const useUserStoreBase = create<UserStore>((set) => ({
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+
+  setUser: (user) =>
+    set({
+      user,
+      isLoading: false,
+      isAuthenticated: !!user,
+    }),
+
+  logout: () =>
+    set({
+      user: null,
+      isAuthenticated: false,
+    }),
+}));
+
+// Create selectors to minimize re-renders
+export const useUserStore = createSelectors(useUserStoreBase);
+
+// Usage:
+// const user = useUserStore.use.user()
+// const isAuthenticated = useUserStore.use.isAuthenticated()
+```
+
+Utility file for creating selectors:
+
+```typescript
+// lib/utils/create-selectors.ts
+import { StoreApi, UseBoundStore } from "zustand";
+
+type WithSelectors<S> = S extends { getState: () => infer T }
+  ? S & { use: { [K in keyof T]: () => T[K] } }
+  : never;
+
+export const createSelectors = <S extends UseBoundStore<StoreApi<object>>>(
+  _store: S
+) => {
+  const store = _store as WithSelectors<typeof _store>;
+  store.use = {};
+
+  // Create selector for each key in state
+  for (const k of Object.keys(store.getState())) {
+    (store.use as any)[k] = () => store((s) => s[k as keyof typeof s]);
+  }
+
+  return store;
+};
+```
+
+## Using Stores in Components
+
+```tsx
+// components/documents/document-filter.tsx
+"use client";
+
+import { useFilterStore } from "@/lib/store/use-filter-store";
+import { useDocumentStore } from "@/lib/store/use-document-store";
+import { useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export function DocumentFilter({ categories }) {
+  // Get state from store
+  const { searchTerm, categoryId, sortBy } = useFilterStore();
+
+  // Get actions from store
+  const { setSearchTerm, setCategoryId, setSortBy, resetFilters } =
+    useFilterStore();
+
+  // Combine multiple stores
+  const fetchDocuments = useDocumentStore((state) => state.fetchDocuments);
+
+  // Apply filter to another store
+  useEffect(() => {
+    useDocumentStore.setState((state) => ({
+      filters: {
+        ...state.filters,
+        categoryId,
+        searchTerm,
+      },
+    }));
+
+    fetchDocuments();
+  }, [categoryId, searchTerm, sortBy, fetchDocuments]);
+
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row">
+      <Input
+        placeholder="Search documents..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full sm:max-w-xs"
+      />
+
+      <Select
+        value={categoryId || ""}
+        onValueChange={(value) => setCategoryId(value || null)}
+      >
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Category" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All Categories</SelectItem>
+          {categories.map((category) => (
+            <SelectItem key={category.id} value={category.id}>
+              {category.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={sortBy} onValueChange={(value) => setSortBy(value)}>
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Sort by" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="newest">Newest</SelectItem>
+          <SelectItem value="oldest">Oldest</SelectItem>
+          <SelectItem value="name">Name</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Button variant="outline" onClick={resetFilters}>
+        Reset Filters
+      </Button>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+1. **Focus on Structure**:
+
+   - Create small, focused stores for specific features
+   - Avoid large and complex stores
+
+2. **Performance Optimization**:
+
+   - Use selectors to minimize re-renders
+   - Only subscribe to necessary state parts
+
+3. **State Management Pattern**:
+
+   - Divide state into clear parts (state, actions, computed values)
+   - Use middleware when needed (persist, devtools, immer)
+
+4. **Combine with React Query**:
+   - Zustand for UI state, form state, filter state
+   - React Query for data fetching, caching, and server state

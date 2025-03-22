@@ -52,13 +52,13 @@ export default async function HomePage({
   const uniqueCategories = [...new Set(documents.map((doc) => doc.category))];
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       {/* Hero section with search */}
-      <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold tracking-tight">
+      <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center sm:p-8">
+        <h1 className="mb-2 text-2xl font-bold tracking-tight sm:text-4xl">
           Student Document Library
         </h1>
-        <p className="text-muted-foreground mb-6 max-w-2xl">
+        <p className="text-muted-foreground mb-4 max-w-2xl text-sm sm:mb-6 sm:text-base">
           Find free academic resources, lecture notes, study guides, and more -
           shared by students, for students
         </p>
@@ -69,14 +69,14 @@ export default async function HomePage({
       </div>
 
       {/* Category tabs - Client Component */}
-      <div className="flex justify-center overflow-auto pb-1">
+      <div className="-mx-4 flex justify-start overflow-auto px-4 pb-1 sm:mx-0 sm:justify-center sm:px-0">
         <Suspense fallback={<div>Loading categories...</div>}>
           <CategoryTabs categories={uniqueCategories} />
         </Suspense>
       </div>
 
       {/* Các Component con khác... */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
         <DocumentListRecent documents={recentDocuments} />
         <DocumentListPopular documents={popularDocuments} />
       </div>

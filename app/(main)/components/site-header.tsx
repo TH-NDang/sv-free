@@ -1,110 +1,39 @@
 "use client";
 
-import { PlusIcon, ShareIcon, SidebarIcon, UploadIcon } from "lucide-react";
+import { PlusIcon, ShareIcon, UploadIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Fragment, useMemo } from "react";
 
+import { MainNav } from "@/app/(main)/components/main-nav";
+import { MobileNav } from "@/app/(main)/components/mobile-nav";
 import { ModeToggle } from "@/app/(main)/components/mode-toggle";
 import { NavUser } from "@/app/(main)/components/nav-user";
-import { SearchForm } from "@/components/demo/search-form";
 import { ThemeSelector } from "@/components/theme-selector";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
-import { useSidebar } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export function SiteHeader() {
-  const { toggleSidebar } = useSidebar();
-  const pathname = usePathname();
-
-  // Faux breadcrumbs for demo.
-  const breadcrumbs = useMemo(() => {
-    return pathname
-      .split("/")
-      .filter((path) => path !== "")
-      .map((path, index, array) => ({
-        label: path,
-        href: `/${array.slice(0, index + 1).join("/")}`,
-      }));
-  }, [pathname]);
-
   return (
     <header
       data-slot="site-header"
       className="bg-background sticky top-0 z-50 flex w-full items-center border-b"
     >
-      <div className="h-(--header-height) flex w-full items-center gap-2 px-2 pr-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleSidebar}
-          className="cursor-pointer gap-2.5 has-[>svg]:px-2"
-        >
-          <SidebarIcon />
-          <span className="truncate font-medium">Document Library</span>
-        </Button>
-        <Separator
-          orientation="vertical"
-          className="mr-2 data-[orientation=vertical]:h-4"
-        />
-        <Breadcrumb className="hidden sm:block">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/" className="capitalize">
-                Home
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            {breadcrumbs.map((breadcrumb, index) =>
-              index === breadcrumbs.length - 1 ? (
-                <BreadcrumbItem key={index}>
-                  <BreadcrumbPage className="capitalize">
-                    {breadcrumb.label}
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              ) : (
-                <Fragment key={index}>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink
-                      href={breadcrumb.href}
-                      className="capitalize"
-                    >
-                      {breadcrumb.label}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                </Fragment>
-              )
-            )}
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-auto flex items-center gap-2">
-          <SearchForm className="w-full sm:w-auto" />
+      <div className="flex h-[var(--header-height)] w-full items-center justify-between px-2 sm:px-3 md:px-4">
+        {/* Left side: Navigation */}
+        <MobileNav />
+        <MainNav />
 
+        {/* Right side: Actions */}
+        <div className="flex items-center gap-4 px-2 sm:gap-8 md:gap-6">
+          {/* Add Document dropdown - hiển thị trên mọi thiết bị nhưng đơn giản hóa trên mobile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-2">
-                <PlusIcon className="mr-1 h-4 w-4" />
+              <Button variant="outline" size="sm" className="ml-1 sm:ml-2">
+                <PlusIcon className="h-4 w-4 sm:mr-1" />
                 <span className="hidden sm:inline">Add Document</span>
               </Button>
             </DropdownMenuTrigger>
@@ -115,28 +44,25 @@ export function SiteHeader() {
                   <span>Upload File</span>
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hidden sm:flex">
                 <ShareIcon className="mr-2 h-4 w-4" />
                 <span>Request Document</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Create Folder</DropdownMenuItem>
-              <DropdownMenuItem>Create Collection</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="ml-1">
-                <ShareIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Share Document</TooltipContent>
-          </Tooltip>
+          <div className="flex items-center gap-4">
+            {/* Theme selector - chỉ hiển thị trên màn hình lớn */}
+            <div className="hidden lg:block">
+              <ThemeSelector />
+            </div>
 
-          <ThemeSelector />
-          <ModeToggle />
-          <NavUser />
+            {/* Mode toggle và User profile - hiển thị trên mọi thiết bị */}
+            <div className="flex items-center gap-4 sm:gap-8 md:gap-6">
+              <ModeToggle />
+              <NavUser />
+            </div>
+          </div>
         </div>
       </div>
     </header>

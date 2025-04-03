@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBrightness } from "@tabler/icons-react";
+import { SunMedium } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
 
@@ -31,7 +31,7 @@ export function NavUtil(
           <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
             <SidebarMenuButton asChild>
               <label>
-                <IconBrightness />
+                <SunMedium />
                 <span>Dark Mode</span>
                 {mounted ? (
                   <Switch

@@ -1,6 +1,5 @@
 "use client";
 
-import { IconCheck, IconCopy, IconSave } from "@tabler/icons-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Check, Copy, Save } from "lucide-react";
 
 export default function SettingsPage() {
   const [generalSaved, setGeneralSaved] = useState(false);
@@ -95,12 +95,12 @@ export default function SettingsPage() {
               <Button onClick={handleSaveGeneral}>
                 {generalSaved ? (
                   <>
-                    <IconCheck className="mr-2 h-4 w-4" />
+                    <Check className="mr-2 h-4 w-4" />
                     Saved
                   </>
                 ) : (
                   <>
-                    <IconSave className="mr-2 h-4 w-4" />
+                    <Save className="mr-2 h-4 w-4" />
                     Save Changes
                   </>
                 )}
@@ -261,9 +261,9 @@ export default function SettingsPage() {
                     onClick={handleCopyApiKey}
                   >
                     {apiKeyCopied ? (
-                      <IconCheck className="h-4 w-4" />
+                      <Check className="h-4 w-4" />
                     ) : (
-                      <IconCopy className="h-4 w-4" />
+                      <Copy className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                     type="password"
                   />
                   <Button variant="outline" size="icon">
-                    <IconCopy className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

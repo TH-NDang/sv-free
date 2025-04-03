@@ -1,10 +1,4 @@
-import {
-  IconCheck,
-  IconPlus,
-  IconSearch,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react";
+import { Check, Plus, Search, Trash, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,7 +74,7 @@ export default function UsersPage() {
           </p>
         </div>
         <Button>
-          <IconPlus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4" />
           Add User
         </Button>
       </div>
@@ -96,7 +90,7 @@ export default function UsersPage() {
                 type="search"
               />
               <Button size="sm" variant="ghost" className="h-9 px-2">
-                <IconSearch className="h-4 w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -123,19 +117,21 @@ export default function UsersPage() {
                     <Badge
                       variant={
                         user.status === "Active"
-                          ? "success"
+                          ? "default"
                           : user.status === "Inactive"
                             ? "destructive"
                             : "secondary"
                       }
-                      className="gap-1"
+                      className={
+                        user.status === "Active"
+                          ? "gap-1 bg-green-500 hover:bg-green-600"
+                          : "gap-1"
+                      }
                     >
                       {user.status === "Active" && (
-                        <IconCheck className="h-3 w-3" />
+                        <Check className="h-3 w-3" />
                       )}
-                      {user.status === "Inactive" && (
-                        <IconX className="h-3 w-3" />
-                      )}
+                      {user.status === "Inactive" && <X className="h-3 w-3" />}
                       {user.status}
                     </Badge>
                   </TableCell>
@@ -150,7 +146,7 @@ export default function UsersPage() {
                         variant="ghost"
                         className="text-destructive"
                       >
-                        <IconTrash className="h-4 w-4" />
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

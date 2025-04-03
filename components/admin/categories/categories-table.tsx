@@ -1,9 +1,4 @@
-import {
-  IconEdit,
-  IconFiles,
-  IconFolder,
-  IconTrash,
-} from "@tabler/icons-react";
+import { Edit, Files, Folder, Trash } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +29,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
   if (categories.length === 0) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
-        <IconFolder className="text-muted-foreground/50 h-10 w-10" />
+        <Folder className="text-muted-foreground/50 h-10 w-10" />
         <h3 className="mt-4 text-lg font-semibold">No categories found</h3>
         <p className="text-muted-foreground mb-4 mt-2 text-sm">
           Add a category to organize your documents
@@ -62,7 +57,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
           <TableRow key={category.id}>
             <TableCell className="font-medium">
               <div className="flex items-center gap-2">
-                <IconFolder className="text-muted-foreground h-4 w-4" />
+                <Folder className="text-muted-foreground h-4 w-4" />
                 <span className="font-medium">{category.name}</span>
               </div>
             </TableCell>
@@ -73,7 +68,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-1">
-                <IconFiles className="text-muted-foreground h-3.5 w-3.5" />
+                <Files className="text-muted-foreground h-3.5 w-3.5" />
                 <span>{category.documentCount}</span>
               </div>
             </TableCell>
@@ -86,7 +81,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" asChild>
                   <Link href={`/admin/categories/${category.id}`}>
-                    <IconEdit className="mr-1 h-3.5 w-3.5" />
+                    <Edit className="mr-1 h-3.5 w-3.5" />
                     Edit
                   </Link>
                 </Button>
@@ -101,7 +96,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
                       : "Delete category"
                   }
                 >
-                  <IconTrash className="h-3.5 w-3.5" />
+                  <Trash className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </TableCell>

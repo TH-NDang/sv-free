@@ -1,6 +1,6 @@
 "use client";
 
-import { IconFile, IconFolder, IconTag } from "@tabler/icons-react";
+import { File, Folder, Tag } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -23,15 +23,15 @@ export function AdminTabNavigation() {
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="documents" className="flex items-center gap-2">
-          <IconFile className="h-4 w-4" />
+          <File className="h-4 w-4" />
           <span>Documents</span>
         </TabsTrigger>
         <TabsTrigger value="categories" className="flex items-center gap-2">
-          <IconFolder className="h-4 w-4" />
+          <Folder className="h-4 w-4" />
           <span>Categories</span>
         </TabsTrigger>
         <TabsTrigger value="tags" className="flex items-center gap-2">
-          <IconTag className="h-4 w-4" />
+          <Tag className="h-4 w-4" />
           <span>Tags</span>
         </TabsTrigger>
       </TabsList>
@@ -46,25 +46,25 @@ export function AdminActionButton({ tab }: { tab: string }) {
     switch (tab) {
       case "documents":
         return {
-          icon: <IconFile className="mr-2 h-4 w-4" />,
+          icon: <File className="mr-2 h-4 w-4" />,
           label: "Add Document",
           href: "/admin/documents/create",
         };
       case "categories":
         return {
-          icon: <IconFolder className="mr-2 h-4 w-4" />,
+          icon: <Folder className="mr-2 h-4 w-4" />,
           label: "Add Category",
           href: "/admin/categories/create",
         };
       case "tags":
         return {
-          icon: <IconTag className="mr-2 h-4 w-4" />,
+          icon: <Tag className="mr-2 h-4 w-4" />,
           label: "Add Tag",
           href: "/admin/tags/create",
         };
       default:
         return {
-          icon: <IconFile className="mr-2 h-4 w-4" />,
+          icon: <File className="mr-2 h-4 w-4" />,
           label: "Add Document",
           href: "/admin/documents/create",
         };

@@ -1,6 +1,6 @@
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 interface PaginationProps {
   currentPage: number;
@@ -67,11 +67,11 @@ export function Pagination({
       >
         {currentPage > 1 ? (
           <Link href={generatePageLink(currentPage - 1)}>
-            <IconChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </Link>
         ) : (
           <span>
-            <IconChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </span>
         )}
       </Button>
@@ -116,11 +116,11 @@ export function Pagination({
       >
         {currentPage < totalPages ? (
           <Link href={generatePageLink(currentPage + 1)}>
-            <IconChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Link>
         ) : (
           <span>
-            <IconChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </span>
         )}
       </Button>

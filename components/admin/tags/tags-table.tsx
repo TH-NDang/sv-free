@@ -1,4 +1,4 @@
-import { IconEdit, IconFiles, IconTag, IconTrash } from "@tabler/icons-react";
+import { Edit, Files, Tag, Trash } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export function TagsTable({ tags }: TagsTableProps) {
   if (tags.length === 0) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
-        <IconTag className="text-muted-foreground/50 h-10 w-10" />
+        <Tag className="text-muted-foreground/50 h-10 w-10" />
         <h3 className="mt-4 text-lg font-semibold">No tags found</h3>
         <p className="text-muted-foreground mb-4 mt-2 text-sm">
           Add tags to better organize and filter documents
@@ -57,7 +57,7 @@ export function TagsTable({ tags }: TagsTableProps) {
           <TableRow key={tag.id}>
             <TableCell className="font-medium">
               <div className="flex items-center gap-2">
-                <IconTag className="text-muted-foreground h-4 w-4" />
+                <Tag className="text-muted-foreground h-4 w-4" />
                 <span className="font-medium">{tag.name}</span>
               </div>
             </TableCell>
@@ -68,7 +68,7 @@ export function TagsTable({ tags }: TagsTableProps) {
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-1">
-                <IconFiles className="text-muted-foreground h-3.5 w-3.5" />
+                <Files className="text-muted-foreground h-3.5 w-3.5" />
                 <span>{tag.documentCount}</span>
               </div>
             </TableCell>
@@ -81,7 +81,7 @@ export function TagsTable({ tags }: TagsTableProps) {
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" asChild>
                   <Link href={`/admin/tags/${tag.id}`}>
-                    <IconEdit className="mr-1 h-3.5 w-3.5" />
+                    <Edit className="mr-1 h-3.5 w-3.5" />
                     Edit
                   </Link>
                 </Button>
@@ -96,7 +96,7 @@ export function TagsTable({ tags }: TagsTableProps) {
                       : "Delete tag"
                   }
                 >
-                  <IconTrash className="h-3.5 w-3.5" />
+                  <Trash className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </TableCell>

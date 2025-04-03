@@ -1,4 +1,4 @@
-import { IconSearch } from "@tabler/icons-react";
+import { Search } from "lucide-react";
 import { Suspense } from "react";
 
 import {
@@ -61,7 +61,7 @@ export async function AdminContent({
                 variant="ghost"
                 className="h-9 px-2"
               >
-                <IconSearch className="h-4 w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </form>
           </div>

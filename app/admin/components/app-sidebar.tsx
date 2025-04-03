@@ -1,14 +1,13 @@
 "use client";
 
 import {
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileDescription,
-  IconInnerShadowTop,
-  IconReport,
-  IconUsers,
-} from "@tabler/icons-react";
+  BarChart3,
+  Database,
+  FileText,
+  LayoutDashboard,
+  Settings,
+  Users,
+} from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/app/admin/components/nav-main";
@@ -31,34 +30,34 @@ const data = {
     {
       title: "Dashboard",
       url: "/admin",
-      icon: IconDashboard,
+      icon: LayoutDashboard,
     },
     {
       title: "Users",
       url: "/admin/users",
-      icon: IconUsers,
+      icon: Users,
     },
     {
       title: "Documents",
       url: "/admin/documents",
-      icon: IconFileDescription,
+      icon: FileText,
     },
     {
       title: "Analytics",
       url: "/admin/analytics",
-      icon: IconChartBar,
+      icon: BarChart3,
     },
   ],
   navSecondary: [
     {
       name: "Export Data",
       url: "/admin/exports",
-      icon: IconDatabase,
+      icon: Database,
     },
     {
       name: "Reports",
       url: "/admin/reports",
-      icon: IconReport,
+      icon: FileText,
     },
   ],
 };
@@ -74,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <Link href="/admin">
-                <IconInnerShadowTop className="!size-5" />
+                <Settings className="!size-5" />
                 <span className="text-base font-semibold">Admin Panel</span>
               </Link>
             </SidebarMenuButton>

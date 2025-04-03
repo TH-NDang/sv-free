@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, boolean, unique } from "drizzle-orm/pg-core";
+import { categories } from "./document-schema";
 
 // Bảng users
 export const users = pgTable("users", {
@@ -16,14 +17,6 @@ export const users = pgTable("users", {
   banned: boolean("banned").default(false), // Cấm người dùng
   banReason: text("ban_reason"), // Lý do cấm
   banExpires: timestamp("ban_expires"), // Thời gian hết cấm
-});
-
-// Bảng categories
-export const categories = pgTable("categories", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull().unique(), // Tên danh mục
-  description: text("description"), // Mô tả danh mục
-  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Bảng resources

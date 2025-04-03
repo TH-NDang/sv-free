@@ -7,7 +7,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth-schema";
+import { users } from "./auth-schema";
 
 export const categories = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -26,7 +26,7 @@ export const documents = pgTable("documents", {
   fileType: varchar("file_type", { length: 50 }),
   fileSize: text("file_size"),
   categoryId: uuid("category_id").references(() => categories.id),
-  authorId: text("author_id").references(() => user.id),
+  authorId: text("author_id").references(() => users.id),
   thumbnailUrl: text("thumbnail_url"),
   published: boolean("published").default(true).notNull(),
   downloadCount: text("download_count").default("0"),
@@ -60,9 +60,9 @@ export const documentsRelations = relations(documents, ({ one, many }) => ({
     fields: [documents.categoryId],
     references: [categories.id],
   }),
-  author: one(user, {
+  author: one(users, {
     fields: [documents.authorId],
-    references: [user.id],
+    references: [users.id],
   }),
   tags: many(documentTags),
 }));

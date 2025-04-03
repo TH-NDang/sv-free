@@ -1,17 +1,7 @@
-import {
-  IconEdit,
-  IconFiles,
-  IconPlus,
-  IconSearch,
-  IconTag,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconEdit, IconFiles, IconTag, IconTrash } from "@tabler/icons-react";
 import Link from "next/link";
-import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -21,61 +11,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTags } from "@/lib/db/queries/tags";
 import { formatDate } from "@/lib/utils";
 
-export default async function TagsPage() {
-  const tags = await getTags();
-
-  return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tags</h1>
-          <p className="text-muted-foreground">Manage document tags</p>
-        </div>
-        <Button asChild>
-          <Link href="/admin/tags/create">
-            <IconPlus className="mr-2 h-4 w-4" />
-            Add Tag
-          </Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader className="px-6 pb-4 pt-6">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-            <CardTitle>All Tags</CardTitle>
-            <div className="flex w-full max-w-sm items-center space-x-2">
-              <form className="flex w-full items-center space-x-2">
-                <Input
-                  placeholder="Search tags..."
-                  className="h-9"
-                  name="search"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="ghost"
-                  className="h-9 px-2"
-                >
-                  <IconSearch className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Suspense fallback={<TagsTableSkeleton />}>
-            <TagsTable tags={tags} />
-          </Suspense>
-        </CardContent>
-      </Card>
-    </div>
-  );
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  documentCount: number;
+  createdAt: string | Date;
 }
 
-function TagsTable({ tags }) {
+interface TagsTableProps {
+  tags: Tag[];
+}
+
+export function TagsTable({ tags }: TagsTableProps) {
   if (tags.length === 0) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
@@ -157,7 +107,7 @@ function TagsTable({ tags }) {
   );
 }
 
-function TagsTableSkeleton() {
+export function TagsTableSkeleton() {
   return (
     <div className="p-6">
       <div className="space-y-4">

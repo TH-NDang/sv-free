@@ -27,17 +27,7 @@ export async function getDocuments({
   offset = 0,
 }: DocumentQueryParams = {}) {
   try {
-    let query = db
-      .select({
-        document: documents,
-        category: categories,
-      })
-      .from(documents)
-      .leftJoin(categories, eq(documents.categoryId, categories.id))
-      .orderBy(desc(documents.createdAt))
-      .limit(limit)
-      .offset(offset);
-
+    // Build all filter conditions
     const conditions = [];
 
     if (categoryId) {
@@ -56,14 +46,65 @@ export async function getDocuments({
       conditions.push(like(documents.title, `%${searchTerm}%`));
     }
 
-    if (tagId) {
-      query = query
-        .innerJoin(documentTags, eq(documents.id, documentTags.documentId))
-        .where(eq(documentTags.tagId, tagId));
-    }
+    // Handle tag filtering
+    let query;
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+    if (tagId) {
+      // For tag filtering, we need to join with documentTags
+      if (conditions.length > 0) {
+        // Combine tag condition with other conditions
+        query = db
+          .select({
+            document: documents,
+            category: categories,
+          })
+          .from(documents)
+          .leftJoin(categories, eq(documents.categoryId, categories.id))
+          .innerJoin(documentTags, eq(documents.id, documentTags.documentId))
+          .where(and(eq(documentTags.tagId, tagId), ...conditions))
+          .orderBy(desc(documents.createdAt))
+          .limit(limit)
+          .offset(offset);
+      } else {
+        // Only tag condition
+        query = db
+          .select({
+            document: documents,
+            category: categories,
+          })
+          .from(documents)
+          .leftJoin(categories, eq(documents.categoryId, categories.id))
+          .innerJoin(documentTags, eq(documents.id, documentTags.documentId))
+          .where(eq(documentTags.tagId, tagId))
+          .orderBy(desc(documents.createdAt))
+          .limit(limit)
+          .offset(offset);
+      }
+    } else if (conditions.length > 0) {
+      // No tag filtering, only other conditions
+      query = db
+        .select({
+          document: documents,
+          category: categories,
+        })
+        .from(documents)
+        .leftJoin(categories, eq(documents.categoryId, categories.id))
+        .where(and(...conditions))
+        .orderBy(desc(documents.createdAt))
+        .limit(limit)
+        .offset(offset);
+    } else {
+      // No filtering at all
+      query = db
+        .select({
+          document: documents,
+          category: categories,
+        })
+        .from(documents)
+        .leftJoin(categories, eq(documents.categoryId, categories.id))
+        .orderBy(desc(documents.createdAt))
+        .limit(limit)
+        .offset(offset);
     }
 
     const results = await query;
@@ -152,16 +193,33 @@ export async function getDocumentCount(params: DocumentQueryParams = {}) {
       conditions.push(like(documents.title, `%${searchTerm}%`));
     }
 
-    let query = db.select({ count: count() }).from(documents);
+    let query;
 
     if (tagId) {
-      query = query
-        .innerJoin(documentTags, eq(documents.id, documentTags.documentId))
-        .where(eq(documentTags.tagId, tagId));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      // For tag filtering with other conditions
+      if (conditions.length > 0) {
+        query = db
+          .select({ count: count() })
+          .from(documents)
+          .innerJoin(documentTags, eq(documents.id, documentTags.documentId))
+          .where(and(eq(documentTags.tagId, tagId), ...conditions));
+      } else {
+        // Only tag condition
+        query = db
+          .select({ count: count() })
+          .from(documents)
+          .innerJoin(documentTags, eq(documents.id, documentTags.documentId))
+          .where(eq(documentTags.tagId, tagId));
+      }
+    } else if (conditions.length > 0) {
+      // No tag filtering, only other conditions
+      query = db
+        .select({ count: count() })
+        .from(documents)
+        .where(and(...conditions));
+    } else {
+      // No filtering at all
+      query = db.select({ count: count() }).from(documents);
     }
 
     const result = await query;

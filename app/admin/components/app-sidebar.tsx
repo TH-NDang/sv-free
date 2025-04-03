@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  IconCategory,
   IconChartBar,
   IconDashboard,
   IconDatabase,
   IconFileDescription,
   IconInnerShadowTop,
   IconReport,
-  IconTag,
   IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
@@ -44,16 +42,6 @@ const data = {
       title: "Documents",
       url: "/admin/documents",
       icon: IconFileDescription,
-    },
-    {
-      title: "Categories",
-      url: "/admin/categories",
-      icon: IconCategory,
-    },
-    {
-      title: "Tags",
-      url: "/admin/tags",
-      icon: IconTag,
     },
     {
       title: "Analytics",

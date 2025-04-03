@@ -1,27 +1,10 @@
+import { AdminContent } from "@/components/admin/doc-admin-page-content";
+import { Pagination } from "@/components/admin/pagination";
 import {
-  IconCategory,
-  IconDownload,
-  IconEdit,
-  IconEye,
-  IconEyeOff,
-  IconFile,
-  IconPlus,
-  IconSearch,
-  IconTrash,
-} from "@tabler/icons-react";
-import Link from "next/link";
-import { Suspense } from "react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+  AdminActionButton,
+  AdminTabNavigation,
+} from "@/components/admin/tab-navigation";
+import { Card, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -31,207 +14,183 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getDocumentCount, getDocuments } from "@/lib/db/queries/documents";
-import { formatDate, truncate } from "@/lib/utils";
 
-interface DocumentsPageProps {
+// Định nghĩa kiểu Document
+type DocumentType = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+  authorName?: string;
+  published: boolean;
+  downloadCount?: number | string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+interface DocPageProps {
   searchParams: {
     search?: string;
     category?: string;
     page?: string;
+    tab?: string;
   };
 }
 
-export default async function DocumentsPage({
-  searchParams,
-}: DocumentsPageProps) {
-  const { search, category, page = "1" } = searchParams;
+export default async function DocPage({ searchParams }: DocPageProps) {
+  const { search, category, page = "1", tab = "documents" } = searchParams;
   const pageNumber = parseInt(page, 10) || 1;
   const pageSize = 10;
 
-  const documents = await getDocuments({
-    searchTerm: search,
-    categoryId: category,
-    publishedOnly: false,
-    limit: pageSize,
-    offset: (pageNumber - 1) * pageSize,
-  });
+  // Sử dụng dữ liệu mẫu cố định thay vì gọi API
+  const mockDocuments: DocumentType[] = [
+    {
+      id: "1",
+      title: "Giáo trình Toán học lớp 12",
+      description: "Tài liệu học tập dành cho học sinh lớp 12",
+      category: {
+        id: "cat1",
+        name: "Toán học",
+        slug: "toan-hoc",
+        description: "Tài liệu Toán học các cấp",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      authorName: "Nguyễn Văn A",
+      published: true,
+      downloadCount: 125,
+      createdAt: new Date("2023-08-15"),
+      updatedAt: new Date("2023-08-15"),
+    },
+    {
+      id: "2",
+      title: "Giáo trình Vật lý lớp 11",
+      description: "Tài liệu học tập dành cho học sinh lớp 11",
+      category: {
+        id: "cat2",
+        name: "Vật lý",
+        slug: "vat-ly",
+        description: "Tài liệu Vật lý các cấp",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      authorName: "Trần Thị B",
+      published: true,
+      downloadCount: 98,
+      createdAt: new Date("2023-07-20"),
+      updatedAt: new Date("2023-07-20"),
+    },
+    {
+      id: "3",
+      title: "Giáo trình Hóa học lớp 10",
+      description: "Tài liệu học tập dành cho học sinh lớp 10",
+      category: {
+        id: "cat3",
+        name: "Hóa học",
+        slug: "hoa-hoc",
+        description: "Tài liệu Hóa học các cấp",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      authorName: "Lê Văn C",
+      published: false,
+      downloadCount: 45,
+      createdAt: new Date("2023-06-10"),
+      updatedAt: new Date("2023-06-10"),
+    },
+    {
+      id: "4",
+      title: "Đề thi thử THPT Quốc gia môn Ngữ văn",
+      description: "Bộ đề thi thử có đáp án chi tiết",
+      category: {
+        id: "cat4",
+        name: "Ngữ văn",
+        slug: "ngu-van",
+        description: "Tài liệu Ngữ văn các cấp",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      authorName: "Phạm Thị D",
+      published: true,
+      downloadCount: 210,
+      createdAt: new Date("2023-05-05"),
+      updatedAt: new Date("2023-05-05"),
+    },
+    {
+      id: "5",
+      title: "Tài liệu ôn thi Tiếng Anh",
+      description: "Tài liệu ôn tập từ vựng và ngữ pháp",
+      category: {
+        id: "cat5",
+        name: "Tiếng Anh",
+        slug: "tieng-anh",
+        description: "Tài liệu Tiếng Anh các cấp",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      authorName: "Nguyễn Thị E",
+      published: true,
+      downloadCount: 178,
+      createdAt: new Date("2023-04-15"),
+      updatedAt: new Date("2023-04-15"),
+    },
+  ];
 
-  const totalDocuments = await getDocumentCount({
-    searchTerm: search,
-    categoryId: category,
-    publishedOnly: false,
-  });
-
-  const totalPages = Math.ceil(totalDocuments / pageSize);
-
-  return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground">
-            Manage educational documents and resources
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/admin/documents/create">
-            <IconPlus className="mr-2 h-4 w-4" />
-            Add Document
-          </Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader className="px-6 pb-4 pt-6">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-            <CardTitle>All Documents</CardTitle>
-            <div className="flex w-full max-w-sm items-center space-x-2">
-              <form className="flex w-full items-center space-x-2">
-                <Input
-                  placeholder="Search documents..."
-                  className="h-9"
-                  name="search"
-                  defaultValue={search}
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="ghost"
-                  className="h-9 px-2"
-                >
-                  <IconSearch className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Suspense fallback={<DocumentsTableSkeleton />}>
-            <DocumentsTable documents={documents} />
-          </Suspense>
-        </CardContent>
-        <CardFooter className="flex items-center justify-between px-6 py-4">
-          <div className="text-muted-foreground text-xs">
-            Showing <strong>{documents.length}</strong> of{" "}
-            <strong>{totalDocuments}</strong> documents
-          </div>
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={pageNumber}
-              totalPages={totalPages}
-              baseUrl={`/admin/documents?search=${search || ""}&category=${category || ""}`}
-            />
-          )}
-        </CardFooter>
-      </Card>
-    </div>
-  );
-}
-
-function DocumentsTable({ documents }: { documents: Document[] }) {
-  if (documents.length === 0) {
-    return (
-      <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
-        <IconFile className="text-muted-foreground/50 h-10 w-10" />
-        <h3 className="mt-4 text-lg font-semibold">No documents found</h3>
-        <p className="text-muted-foreground mb-4 mt-2 text-sm">
-          Try adjusting your search or filter criteria
-        </p>
-        <Button asChild variant="outline">
-          <Link href="/admin/documents/create">Add a new document</Link>
-        </Button>
-      </div>
+  // Tìm kiếm đơn giản nếu có tham số search
+  let filteredDocuments = mockDocuments;
+  if (search) {
+    filteredDocuments = mockDocuments.filter((doc) =>
+      doc.title.toLowerCase().includes(search.toLowerCase())
     );
   }
 
-  return (
+  // Lọc theo category nếu có
+  if (category) {
+    filteredDocuments = filteredDocuments.filter(
+      (doc) => doc.category?.id === category
+    );
+  }
+
+  // Phân trang
+  const startIndex = (pageNumber - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedDocuments = filteredDocuments.slice(startIndex, endIndex);
+
+  const totalDocuments = filteredDocuments.length;
+  const totalPages = Math.ceil(totalDocuments / pageSize);
+
+  // Tạo component mẫu tại chỗ
+  const DocumentsTable = ({ documents }: { documents: DocumentType[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Title</TableHead>
           <TableHead>Category</TableHead>
-          <TableHead>Author</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Downloads</TableHead>
           <TableHead>Created</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {documents.map((doc) => (
           <TableRow key={doc.id}>
-            <TableCell className="font-medium">
-              <div className="flex items-center gap-2">
-                <IconFile className="text-muted-foreground h-4 w-4" />
-                <span className="font-medium">{truncate(doc.title, 40)}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              {doc.category ? (
-                <Badge variant="outline" className="gap-1 font-normal">
-                  <IconCategory className="h-3 w-3" />
-                  {doc.category.name}
-                </Badge>
-              ) : (
-                <span className="text-muted-foreground text-sm">
-                  Uncategorized
-                </span>
-              )}
-            </TableCell>
-            <TableCell>
-              <span className="text-sm">{doc.authorName || "Unknown"}</span>
-            </TableCell>
-            <TableCell>
-              <Badge
-                variant={doc.published ? "success" : "secondary"}
-                className="gap-1"
-              >
-                {doc.published ? (
-                  <>
-                    <IconEye className="h-3 w-3" />
-                    Published
-                  </>
-                ) : (
-                  <>
-                    <IconEyeOff className="h-3 w-3" />
-                    Draft
-                  </>
-                )}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <span className="flex items-center gap-1 text-sm">
-                <IconDownload className="h-3 w-3" /> {doc.downloadCount || 0}
-              </span>
-            </TableCell>
-            <TableCell>
-              <span className="text-muted-foreground text-sm">
-                {formatDate(doc.createdAt)}
-              </span>
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="outline" asChild>
-                  <Link href={`/admin/documents/${doc.id}`}>
-                    <IconEdit className="mr-1 h-3.5 w-3.5" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button size="sm" variant="ghost" className="text-destructive">
-                  <IconTrash className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </TableCell>
+            <TableCell>{doc.title}</TableCell>
+            <TableCell>{doc.category?.name || "Uncategorized"}</TableCell>
+            <TableCell>{doc.published ? "Published" : "Draft"}</TableCell>
+            <TableCell>{doc.createdAt.toLocaleDateString()}</TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
   );
-}
 
-function DocumentsTableSkeleton() {
-  return (
+  const DocumentsTableSkeleton = () => (
     <div className="p-6">
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -249,43 +208,48 @@ function DocumentsTableSkeleton() {
       </div>
     </div>
   );
-}
 
-function Pagination({
-  currentPage,
-  totalPages,
-  baseUrl,
-}: {
-  currentPage: number;
-  totalPages: number;
-  baseUrl: string;
-}) {
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={currentPage <= 1}
-        asChild={currentPage > 1}
-      >
-        {currentPage > 1 ? (
-          <Link href={`${baseUrl}&page=${currentPage - 1}`}>Previous</Link>
-        ) : (
-          "Previous"
+    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+          <p className="text-muted-foreground">
+            Manage documents, categories, and tags
+          </p>
+        </div>
+        <AdminActionButton tab={tab} />
+      </div>
+
+      <div className="space-y-4">
+        <AdminTabNavigation />
+
+        <AdminContent
+          tab={tab}
+          documents={paginatedDocuments}
+          searchTerm={search}
+          DocumentsTable={DocumentsTable}
+          DocumentsTableSkeleton={DocumentsTableSkeleton}
+        />
+
+        {tab === "documents" && totalPages > 1 && (
+          <Card>
+            <CardFooter className="flex items-center justify-between px-6 py-4">
+              <div className="text-muted-foreground text-xs">
+                Showing <strong>{paginatedDocuments.length}</strong> of{" "}
+                <strong>{totalDocuments}</strong> documents
+              </div>
+              <Pagination
+                currentPage={pageNumber}
+                totalPages={totalPages}
+                baseUrl={`/admin?tab=${tab}&search=${search || ""}&category=${
+                  category || ""
+                }`}
+              />
+            </CardFooter>
+          </Card>
         )}
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={currentPage >= totalPages}
-        asChild={currentPage < totalPages}
-      >
-        {currentPage < totalPages ? (
-          <Link href={`${baseUrl}&page=${currentPage + 1}`}>Next</Link>
-        ) : (
-          "Next"
-        )}
-      </Button>
+      </div>
     </div>
   );
 }

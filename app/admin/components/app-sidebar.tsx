@@ -6,18 +6,16 @@ import {
   IconDashboard,
   IconDatabase,
   IconFileDescription,
-  IconFileWord,
   IconInnerShadowTop,
   IconReport,
-  IconShieldCheck,
   IconTag,
   IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
 
-import { NavDocuments } from "@/app/admin/components/nav-documents";
 import { NavMain } from "@/app/admin/components/nav-main";
 import { NavSecondary } from "@/app/admin/components/nav-secondary";
+import { NavUtil } from "@/app/admin/components/nav-util";
 import {
   Sidebar,
   SidebarContent,
@@ -28,13 +26,9 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UserButton } from "@daveyplate/better-auth-ui";
+import Link from "next/link";
 
 const data = {
-  user: {
-    name: "Admin",
-    email: "admin@example.com",
-    avatar: "/avatars/admin.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -69,13 +63,6 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Permissions",
-      url: "/admin/permissions",
-      icon: IconShieldCheck,
-    },
-  ],
-  documents: [
-    {
       name: "Export Data",
       url: "/admin/exports",
       icon: IconDatabase,
@@ -84,11 +71,6 @@ const data = {
       name: "Reports",
       url: "/admin/reports",
       icon: IconReport,
-    },
-    {
-      name: "Logs",
-      url: "/admin/logs",
-      icon: IconFileWord,
     },
   ],
 };
@@ -103,18 +85,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/admin">
+              <Link href="/admin">
                 <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">Admin Panel</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary items={data.navSecondary} />
+        <NavUtil className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <UserButton size="full" />

@@ -36,16 +36,21 @@ type DocumentType = {
 };
 
 interface DocPageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     category?: string;
     page?: string;
     tab?: string;
-  };
+  }>;
 }
 
 export default async function DocPage({ searchParams }: DocPageProps) {
-  const { search, category, page = "1", tab = "documents" } = searchParams;
+  const {
+    search,
+    category,
+    page = "1",
+    tab = "documents",
+  } = await searchParams;
   const pageNumber = parseInt(page, 10) || 1;
   const pageSize = 10;
 

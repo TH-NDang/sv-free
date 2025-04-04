@@ -2,7 +2,6 @@
 
 import { authClient } from "@/lib/auth/auth-client";
 import { AuthUIProvider } from "@daveyplate/better-auth-ui";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import QueryProvider from "./query-provider";
@@ -32,7 +31,6 @@ export function Providers({ children }: { children: ReactNode }) {
         return data.url;
       }}
       settingsUrl="/settings"
-      LinkComponent={Link}
     >
       <QueryProvider>{children}</QueryProvider>
     </AuthUIProvider>

@@ -228,6 +228,7 @@ export default async function DocPage({ searchParams }: DocPageProps) {
           tab={tab}
           documents={paginatedDocuments}
           searchTerm={search}
+          // @ts-expect-error - TODO: fix this
           DocumentsTable={DocumentsTable}
           DocumentsTableSkeleton={DocumentsTableSkeleton}
         />

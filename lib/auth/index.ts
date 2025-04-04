@@ -1,6 +1,6 @@
 import { env } from "@/env/server";
 import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema/auth-schema";
+import * as schema from "@/lib/db/schema";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, oneTap } from "better-auth/plugins";

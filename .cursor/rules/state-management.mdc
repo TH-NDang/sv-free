@@ -27,7 +27,7 @@ lib/
 ```typescript
 // lib/store/use-document-store.ts
 import { create } from "zustand";
-import { getDocuments } from "@/lib/db/queries/documents";
+import { getDocuments } from "@/lib/db/queries";
 
 interface Document {
   id: string;

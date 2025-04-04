@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getCategories, getTags } from "@/lib/mock/admin-data";
-// import { getCategories } from "@/lib/db/queries/categories";
-// import { getTags } from "@/lib/db/queries/tags";
+// import { getCategories } from "@/lib/db/queries";
+// import { getTags } from "@/lib/db/queries";
 
 interface AdminContentProps {
   tab: string;
@@ -90,10 +90,12 @@ export async function AdminContent({
 
 async function CategoriesTableContent() {
   const categories = await getCategories();
+  // @ts-expect-error just for testing
   return <CategoriesTable categories={categories} />;
 }
 
 async function TagsTableContent() {
   const tags = await getTags();
+  // @ts-expect-error just for testing
   return <TagsTable tags={tags} />;
 }

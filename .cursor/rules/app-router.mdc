@@ -70,8 +70,8 @@ export default function RootLayout({
 // app/(main)/documents/page.tsx
 import { Metadata } from "next";
 import { DocumentList } from "@/components/documents/document-list";
-import { getDocuments } from "@/lib/db/queries/documents";
-import { getCategories } from "@/lib/db/queries/categories";
+import { getDocuments } from "@/lib/db/queries";
+import { getCategories } from "@/lib/db/queries";
 import { CategoryTabs } from "@/components/category-tabs";
 import { SearchForm } from "@/components/search-form";
 
@@ -124,7 +124,7 @@ Create API routes in the `app/api` directory:
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { documents } from "@/lib/db/schema/documents";
+import { documents } from "@/lib/db/schema";
 
 // Validation schema
 const documentSchema = z.object({
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
 // app/(main)/documents/[id]/page.tsx
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import { getDocumentById } from "@/lib/db/queries/documents";
+import { getDocumentById } from "@/lib/db/queries";
 
 interface DocumentPageProps {
   params: {

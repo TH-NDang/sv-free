@@ -10,7 +10,7 @@ alwaysApply: true
 Define schemas in the `lib/db/schema` directory following Drizzle ORM conventions.
 
 ```typescript
-// lib/db/schema/documents.ts
+// lib/db/schema
 import { relations } from "drizzle-orm";
 import { pgTable, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core";
 
@@ -65,10 +65,10 @@ export const db = drizzle(client);
 Create reusable query functions in `lib/db/queries` directory:
 
 ```typescript
-// lib/db/queries/documents.ts
+// lib/db/queries.ts
 import { db } from "@/lib/db";
 import { eq, like, desc } from "drizzle-orm";
-import { documents, categories } from "@/lib/db/schema/documents";
+import { documents, categories } from "@/lib/db/schema";
 
 export async function getDocuments({
   categoryId,
@@ -130,7 +130,7 @@ Use database queries in API routes:
 // app/api/documents/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDocuments } from "@/lib/db/queries/documents";
+import { getDocuments } from "@/lib/db/queries";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

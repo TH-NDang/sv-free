@@ -1,0 +1,328 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Next.js 15 App Router Guidelines
+
+## App Directory Structure
+
+The app directory uses a file-system based router:
+
+```
+app/
+├── (main)/                # Group for main public routes
+│   ├── page.tsx           # Home page
+│   ├── layout.tsx         # Layout for main routes
+├── admin/                 # Admin panel routes
+│   ├── page.tsx           # Admin dashboard
+│   └── layout.tsx         # Layout for admin routes
+├── layout.tsx             # Root layout (applies to all routes)
+└── not-found.tsx          # Custom 404 page
+```
+
+## Pages and Layouts
+
+### Root Layout
+
+```tsx
+// app/layout.tsx
+import "@/styles/globals.css";
+import { Inter } from "next/font/google";
+import { Providers } from "@/components/providers";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+  title: {
+    template: "%s | SVFree",
+    default: "SVFree - Free Educational Resources",
+  },
+  description: "A platform for sharing educational materials for students",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="vi" suppressHydrationWarning>
+      <body className={inter.className}>
+        <Providers>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+### Page Component
+
+```tsx
+// app/(main)/documents/page.tsx
+import { Metadata } from "next";
+import { DocumentList } from "@/components/documents/document-list";
+import { getDocuments } from "@/lib/db/queries";
+import { getCategories } from "@/lib/db/queries";
+import { CategoryTabs } from "@/components/category-tabs";
+import { SearchForm } from "@/components/search-form";
+
+export const metadata: Metadata = {
+  title: "Documents",
+  description: "Browse educational documents for students",
+};
+
+interface DocumentsPageProps {
+  searchParams: {
+    category?: string;
+    search?: string;
+  };
+}
+
+export default async function DocumentsPage({
+  searchParams,
+}: DocumentsPageProps) {
+  const { category, search } = searchParams;
+  const documents = await getDocuments({
+    categoryId: category,
+    searchTerm: search,
+  });
+  const categories = await getCategories();
+
+  return (
+    <div className="container py-8">
+      <h1 className="mb-6 text-3xl font-bold">Educational Documents</h1>
+
+      <div className="mb-6">
+        <SearchForm />
+      </div>
+
+      <CategoryTabs categories={categories} activeCategory={category} />
+
+      <div className="mt-8">
+        <DocumentList documents={documents} />
+      </div>
+    </div>
+  );
+}
+```
+
+## Route Handlers (API Routes)
+
+Create API routes in the `app/api` directory:
+
+```tsx
+// app/api/documents/route.ts
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { documents } from "@/lib/db/schema";
+
+// Validation schema
+const documentSchema = z.object({
+  title: z.string().min(3).max(255),
+  description: z.string().optional(),
+  fileUrl: z.string().url(),
+  categoryId: z.string().uuid().optional(),
+});
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const categoryId = searchParams.get("category") || undefined;
+
+  try {
+    const results = await db.query.documents.findMany({
+      where: categoryId ? { categoryId } : undefined,
+      with: { category: true },
+    });
+
+    return NextResponse.json(results);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    // Validate request body
+    const validated = documentSchema.parse(body);
+
+    // Create document
+    const result = await db.insert(documents).values(validated);
+
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid document data", details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error("Error creating document:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Dynamic Routes
+
+```tsx
+// app/(main)/documents/[id]/page.tsx
+import { notFound } from "next/navigation";
+import { Metadata } from "next";
+import { getDocumentById } from "@/lib/db/queries";
+
+interface DocumentPageProps {
+  params: {
+    id: string;
+  };
+}
+
+// Generate dynamic metadata
+export async function generateMetadata({
+  params,
+}: DocumentPageProps): Promise<Metadata> {
+  const document = await getDocumentById(params.id);
+
+  if (!document) {
+    return {
+      title: "Document Not Found",
+    };
+  }
+
+  return {
+    title: document.title,
+    description: document.description || "View document details",
+  };
+}
+
+export default async function DocumentPage({ params }: DocumentPageProps) {
+  const document = await getDocumentById(params.id);
+
+  if (!document) {
+    notFound();
+  }
+
+  return (
+    <div className="container py-8">
+      <h1 className="mb-4 text-3xl font-bold">{document.title}</h1>
+
+      {document.description && (
+        <p className="text-muted-foreground mb-6">{document.description}</p>
+      )}
+
+      <div className="bg-card rounded-lg border p-6">
+        <h2 className="mb-2 text-xl font-semibold">Document Details</h2>
+        <p>Category: {document.category?.name || "Uncategorized"}</p>
+        <p>Added: {new Date(document.createdAt).toLocaleDateString()}</p>
+        <a
+          href={document.fileUrl}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 inline-block rounded-md px-4 py-2"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Download Document
+        </a>
+      </div>
+    </div>
+  );
+}
+```
+
+## Authentication
+
+Implement authentication with Better Auth and Supabase:
+
+```tsx
+// middleware.ts
+import { createMiddleware } from "better-auth/middleware";
+import { NextResponse } from "next/server";
+
+export const middleware = createMiddleware({
+  publicRoutes: ["/"],
+  authRoutes: ["/login", "/register"],
+  onAuthorized: async ({ token, request }) => {
+    return NextResponse.next();
+  },
+  onUnauthorized: async ({ request }) => {
+    return NextResponse.redirect(new URL("/login", request.url));
+  },
+});
+
+export const config = {
+  matcher: ["/admin/:path*", "/documents/upload", "/api/protected/:path*"],
+};
+```
+
+## Loading States and Error Handling
+
+```tsx
+// app/(main)/documents/loading.tsx
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function Loading() {
+  return (
+    <div className="container py-8">
+      <Skeleton className="mb-6 h-10 w-[250px]" />
+
+      <div className="mb-6">
+        <Skeleton className="h-10 w-full" />
+      </div>
+
+      <Skeleton className="mb-8 h-12 w-full" />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-[200px] w-full rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// app/(main)/documents/error.tsx
+("use client");
+
+import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div className="container py-12 text-center">
+      <h2 className="mb-4 text-2xl font-bold">Something went wrong!</h2>
+      <p className="text-muted-foreground mb-6">
+        We encountered an error while loading documents.
+      </p>
+      <Button onClick={() => reset()}>Try again</Button>
+    </div>
+  );
+}
+```

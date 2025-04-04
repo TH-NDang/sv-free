@@ -1,0 +1,145 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Environment Variables Guidelines
+
+## Configuration Setup
+
+SVFree sử dụng `@t3-oss/env-nextjs` để quản lý biến môi trường với kiểm tra kiểu dữ liệu và validation.
+
+## Cấu hình Environment Variables
+
+```typescript
+// env.mjs
+import { createEnv } from "@t3-oss/env-nextjs";
+import { z } from "zod";
+
+export const env = createEnv({
+  server: {
+    // Database
+    DATABASE_URL: z.string().url(),
+
+    // Authentication
+    SUPABASE_URL: z.string().url(),
+    SUPABASE_ANON_KEY: z.string().min(1),
+    SUPABASE_SERVICE_KEY: z.string().min(1),
+
+    // Storage
+    STORAGE_BUCKET: z.string().min(1),
+
+    // API Keys
+    API_SECRET_KEY: z.string().min(1),
+  },
+  client: {
+    // Public client-side variables (sẽ được expose cho browser)
+    NEXT_PUBLIC_APP_URL: z.string().url(),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  },
+  // Biến client sẽ được prefix bằng NEXT_PUBLIC_
+  experimental__runtimeEnv: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  },
+});
+```
+
+## File .env
+
+```
+# .env
+DATABASE_URL="postgres://username:password@localhost:5432/svfree"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_KEY="your-service-key"
+STORAGE_BUCKET="svfree-documents"
+API_SECRET_KEY="your-secret-key"
+
+# Client-side variables
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+```
+
+## File .env.example
+
+Tạo file template không chứa các giá trị nhạy cảm:
+
+```
+# .env.example
+DATABASE_URL="postgres://username:password@localhost:5432/database"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_KEY="your-service-key"
+STORAGE_BUCKET="your-bucket-name"
+API_SECRET_KEY="your-secret-key"
+
+# Client-side variables
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+```
+
+## Sử dụng Environment Variables
+
+### Trong Server Components và API Routes
+
+```typescript
+import { env } from "@/env.mjs";
+
+export async function getServerSideData() {
+  const apiKey = env.API_SECRET_KEY;
+  const databaseUrl = env.DATABASE_URL;
+
+  // Sử dụng các biến env
+  // ...
+}
+```
+
+### Trong Client Components
+
+```typescript
+import { env } from "@/env.mjs";
+
+export function ClientComponent() {
+  // Chỉ có thể truy cập biến được prefix bằng NEXT_PUBLIC_
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
+
+  return (
+    <div>
+      <p>App URL: {appUrl}</p>
+    </div>
+  );
+}
+```
+
+## Kiểu dữ liệu Environment
+
+```typescript
+// types/env.d.ts
+declare namespace NodeJS {
+  interface ProcessEnv {
+    DATABASE_URL: string;
+    SUPABASE_URL: string;
+    SUPABASE_ANON_KEY: string;
+    SUPABASE_SERVICE_KEY: string;
+    STORAGE_BUCKET: string;
+    API_SECRET_KEY: string;
+    NEXT_PUBLIC_APP_URL: string;
+    NEXT_PUBLIC_SUPABASE_URL: string;
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+  }
+}
+```
+
+## Thực hành tốt nhất
+
+- Không commit file `.env` lên repository
+- Luôn cập nhật file `.env.example` khi thêm biến mới
+- Sử dụng `@t3-oss/env-nextjs` để đảm bảo type-safety
+- Chỉ expose các biến cần thiết lên client với prefix NEXT*PUBLIC*
+- Tách biệt cấu hình theo môi trường (.env.development, .env.production)
+- Kiểm tra tất cả biến môi trường khi ứng dụng khởi động

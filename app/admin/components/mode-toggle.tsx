@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
-import { IconBrightness } from "@tabler/icons-react";
+import { SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
+import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,7 +20,7 @@ export function ModeToggle() {
       className="group/toggle size-8"
       onClick={toggleTheme}
     >
-      <IconBrightness />
+      <SunMoon />
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

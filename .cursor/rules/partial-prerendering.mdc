@@ -1,0 +1,239 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Partial Prerendering (PPR)
+
+## Overview
+
+Partial Prerendering (PPR) is a rendering strategy introduced in Next.js 15 that allows combining static and dynamic components in the same route. This approach optimizes performance by:
+
+- Immediately serving prerendered static content
+- Streaming dynamic components in parallel
+- Preventing client-server waterfalls
+- Combining static and dynamic content in a single HTTP request
+
+> **Note:** As of Next.js 15, PPR is an **experimental** feature available on canary versions and is subject to change.
+
+## Explanation
+
+PPR enables the Next.js server to immediately send prerendered content to the browser. During build time, Next.js prerenders as much of the route as possible. If dynamic code is detected (like reading from incoming requests), the relevant component will be wrapped with a React Suspense boundary, and the Suspense fallback will be included in the prerendered HTML.
+
+To prevent client-to-server waterfalls, dynamic components begin streaming from the server in parallel while serving the initial prerender. This ensures dynamic components can start rendering before client JavaScript has been loaded in the browser.
+
+## Implementation in SVFree
+
+SVFree can leverage PPR to optimize page loading times while maintaining dynamic functionality for interactive components.
+
+### Configuration Setup
+
+Enable PPR in the Next.js configuration:
+
+```typescript
+// next.config.ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: true, // or 'incremental' for incremental adoption
+  },
+};
+
+export default nextConfig;
+```
+
+### Usage in Routes
+
+For each route where you want to use PPR, add the `experimental_ppr` flag:
+
+```typescript
+// app/documents/page.tsx
+import { Suspense } from 'react'
+import { DocumentList } from '@/components/documents/document-list'
+import { DocumentFilters } from '@/components/documents/document-filters'
+import { DocumentListSkeleton } from '@/components/skeletons'
+
+export const experimental_ppr = true
+
+export default function DocumentsPage() {
+  return (
+    <div className="container py-8">
+      <h1 className="text-3xl font-bold mb-6">Educational Documents</h1>
+
+      {/* Static content - will be prerendered */}
+      <div className="mb-6">
+        <p className="text-muted-foreground">
+          Browse our collection of educational materials.
+        </p>
+      </div>
+
+      {/* Dynamic content - wrapped in Suspense */}
+      <Suspense fallback={<DocumentListSkeleton />}>
+        <DocumentFilters />
+        <DocumentList />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+## Dynamic Components
+
+Components that access dynamic data (like cookies, headers, or searchParams) should be wrapped in Suspense boundaries:
+
+```typescript
+// components/documents/document-list.tsx
+import { cookies } from 'next/headers'
+import { db } from '@/lib/db'
+
+export async function DocumentList() {
+  // This makes the component dynamic - reading from cookies
+  const userPreferences = cookies().get('preferences')?.value
+
+  // Fetch documents based on user preferences
+  const documents = await db.documents.findMany({
+    where: {
+      // Use preferences to filter documents
+    }
+  })
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {documents.map((document) => (
+        <DocumentCard key={document.id} document={document} />
+      ))}
+    </div>
+  )
+}
+```
+
+## Mixing Static and Dynamic Content
+
+PPR allows optimal performance by only making dynamic the components that need to be:
+
+```typescript
+// app/document/[id]/page.tsx
+import { Suspense } from 'react'
+import { DocumentViewer } from '@/components/documents/document-viewer'
+import { RelatedDocuments } from '@/components/documents/related-documents'
+import { UserActions } from '@/components/documents/user-actions'
+import { Skeleton } from '@/components/ui/skeleton'
+
+export const experimental_ppr = true
+
+export default function DocumentPage({ params }: { params: { id: string } }) {
+  return (
+    <div className="container py-8">
+      {/* Static content rendered at build time */}
+      <DocumentViewer id={params.id} />
+
+      {/* Dynamic content that depends on user session */}
+      <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+        <UserActions documentId={params.id} />
+      </Suspense>
+
+      {/* Another dynamic component */}
+      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+        <RelatedDocuments documentId={params.id} />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+## Passing Dynamic Data as Props
+
+When data needs to be accessed dynamically, consider where the access happens:
+
+```typescript
+// app/search/page.tsx
+import { Suspense } from 'react'
+import { SearchResults } from '@/components/search/search-results'
+import { SearchForm } from '@/components/search/search-form'
+import { SearchResultsSkeleton } from '@/components/skeletons'
+
+export const experimental_ppr = true
+
+export default function SearchPage({
+  searchParams,
+}: {
+  searchParams: { q: string; category: string }
+}) {
+  return (
+    <div className="container py-8">
+      <h1 className="text-3xl font-bold mb-6">Search Documents</h1>
+
+      {/* Static component */}
+      <SearchForm initialQuery={searchParams.q} />
+
+      {/* Dynamic component that uses searchParams */}
+      <Suspense fallback={<SearchResultsSkeleton />}>
+        <SearchResults searchParams={searchParams} />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+## Incremental Adoption
+
+In Next.js 15 canary versions, you can opt into PPR on a route-by-route basis by setting the `ppr` option in `next.config.js` to `'incremental'`:
+
+```typescript
+// next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    ppr: "incremental",
+  },
+};
+
+module.exports = nextConfig;
+```
+
+Then, you can specify which routes should use PPR by adding the `experimental_ppr` flag:
+
+```typescript
+// app/some-route/page.tsx
+export const experimental_ppr = true;
+
+export default function Page() {
+  // ...
+}
+```
+
+Routes without this flag will use the default rendering behavior (no PPR). This allows gradual adoption of PPR across your application.
+
+## Technical Details
+
+- Components only opt into dynamic rendering when the value is actually accessed
+- PPR applies to all children of a route segment with the `experimental_ppr` flag
+- To disable PPR for child segments, set `experimental_ppr` to `false` in the child segment
+- Dynamic APIs that trigger server-side rendering include: `cookies()`, `headers()`, and accessing `searchParams` values
+
+## Benefits for SVFree Platform
+
+PPR provides significant benefits for SVFree:
+
+1. **Faster Initial Page Load**: Users see prerendered content immediately
+2. **Improved SEO**: Critical content is prerendered and available to crawlers
+3. **Better User Experience**: No blank page while waiting for everything to load
+4. **Reduced Server Load**: Only dynamic components require server processing
+5. **Optimized for Educational Content**: Static educational content loads instantly while personalized features load dynamically
+
+## Best Practices
+
+1. **Identify Static vs Dynamic Content**:
+
+   - Keep UI shells, navigation, and common content static
+   - Make user-specific, search-dependent, or frequently updating content dynamic
+
+2. **Strategic Suspense Placement**:
+
+   - Group related dynamic content under the same Suspense boundary
+   - Use meaningful loading states that match the final content's layout
+
+3. **Performance Monitoring**:
+   - Track Core Web Vitals, especially LCP and INP
+   - Monitor the size of the initial prerendered HTML

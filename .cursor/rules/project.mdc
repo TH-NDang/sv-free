@@ -1,0 +1,72 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# SVFree Project Guidelines
+
+This ruleset defines standards for the SVFree platform - a Next.js 15 application for sharing educational materials.
+
+## Project Structure
+
+- `/app` - Next.js App Router pages and API routes
+- `/app/(main)` - Main public-facing routes
+- `/app/admin` - Admin panel routes
+- `/components` - Reusable React components
+- `/lib` - Core project utilities
+  - `/lib/db` - Database connection and utilities
+  - `/lib/db/schema` - Drizzle schema definitions
+- `/hooks` - Custom React hooks
+
+## Technology Stack
+
+- [Next.js 15](mdc:https:/nextjs.org/docs) with App Router
+- [React 19](mdc:https:/react.dev)
+- [TypeScript](mdc:https:/www.typescriptlang.org/docs)
+- [Tailwind CSS v4](mdc:https:/tailwindcss.com/docs)
+- [Shadcn UI](mdc:https:/ui.shadcn.com/docs) - Component library
+- [Drizzle ORM](mdc:https:/orm.drizzle.team/docs/overview) - TypeScript ORM
+- [Supabase](mdc:https:/supabase.com/docs) + [Better Auth](mdc:https:/github.com/DaveyPlate/better-auth)
+- [Tanstack Query](mdc:https:/tanstack.com/query/latest/docs/react/overview)
+
+## Coding Standards
+
+### Components
+
+- Use functional components with TypeScript interfaces
+- Use named exports instead of default exports
+- Structure files: exports → subcomponents → helpers
+- Default to Server Components unless interactivity is needed
+- Use 'use client' directive only when necessary
+
+### TypeScript
+
+- Use interfaces for object definitions
+- Avoid 'any' type; use proper typing
+- Use explicit return types for functions
+
+### Database
+
+- Define schemas in `/lib/db/schema`
+- Use environment variables for connection strings
+- Create reusable query functions
+- Implement proper error handling
+
+### Styling
+
+- Use Tailwind CSS utility classes directly in JSX
+- Follow a mobile-first approach
+- Use Shadcn UI components for consistent UI
+
+## Authentication
+
+- Use Better Auth and Supabase for authentication
+- Protect sensitive routes appropriately
+- Use environment variables for configuration
+
+## Performance Optimization
+
+- Minimize 'use client' directives
+- Use React Server Components when possible
+- Implement code splitting with dynamic imports
+- Optimize images with Next.js Image component

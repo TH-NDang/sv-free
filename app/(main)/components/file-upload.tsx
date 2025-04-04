@@ -1,12 +1,15 @@
 "use client";
 
-import { AlertCircle, FileIcon, UploadIcon, XIcon } from "lucide-react";
-import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/dropzone";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,19 +22,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import MultipleSelector, { Option } from "@/components/ui/multiselect";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { uploadFile } from "@/lib/supabase";
-import { env } from "@/env/client";
+import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
+import { createClient } from "@/lib/supabase/client";
+import { getMimeType } from "@/lib/utils";
+import { PdfPreview } from "./pdf-preview";
 
-interface FileUploadProps {
-  onFileUploaded?: (fileUrl: string, fileData: FileData) => void;
-  redirectAfterUpload?: boolean;
-  acceptedFileTypes?: string;
-  maxSizeMB?: number;
-}
-
-interface FileData {
+export interface FileData {
   id: string;
   name: string;
   size: number;
@@ -41,156 +38,236 @@ interface FileData {
   categories: string;
 }
 
-// Define document categories with some additional attributes
-const documentCategories: Option[] = [
-  { value: "programming", label: "Programming", group: "Technical" },
-  { value: "data_science", label: "Data Science", group: "Technical" },
-  { value: "web_development", label: "Web Development", group: "Technical" },
-  { value: "mathematics", label: "Mathematics", group: "Sciences" },
-  { value: "physics", label: "Physics", group: "Sciences" },
-  { value: "chemistry", label: "Chemistry", group: "Sciences" },
-  { value: "biology", label: "Biology", group: "Sciences" },
-  { value: "economics", label: "Economics", group: "Social Sciences" },
-  { value: "history", label: "History", group: "Humanities" },
-  { value: "literature", label: "Literature", group: "Humanities" },
-  { value: "philosophy", label: "Philosophy", group: "Humanities" },
-  { value: "art", label: "Art & Design", group: "Creative" },
-  { value: "music", label: "Music", group: "Creative" },
-  { value: "other", label: "Other", group: "Miscellaneous" },
-];
+/**
+ * Custom hook for category search and fetching from API
+ */
+const useCategorySearch = () => {
+  // Fetch all categories from the API
+  const fetchCategories = async (): Promise<Option[]> => {
+    try {
+      const response = await fetch("/api/categories");
 
-export function FileUpload({
-  onFileUploaded,
-  redirectAfterUpload = false,
-  acceptedFileTypes = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip",
-  maxSizeMB = 10,
-}: FileUploadProps) {
-  const router = useRouter();
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [uploading, setUploading] = useState(false);
-  const [title, setTitle] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<Option[]>([]);
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [isPdf, setIsPdf] = useState(false);
-  const pdfObjectUrl = useRef<string | null>(null);
-
-  const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-  // Cleanup object URL when component unmounts
-  useEffect(() => {
-    return () => {
-      if (pdfObjectUrl.current) {
-        URL.revokeObjectURL(pdfObjectUrl.current);
+      if (!response.ok) {
+        throw new Error(`Error fetching categories: ${response.statusText}`);
       }
-    };
-  }, []);
 
-  // Handle file selection
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    // Reset states
-    setError(null);
-    setSuccess(null);
-    setIsPdf(false);
+      const data = await response.json();
 
-    if (!e.target.files || e.target.files.length === 0) {
-      setFile(null);
-      setPreview(null);
-      return;
-    }
-
-    const selectedFile = e.target.files[0];
-
-    // Validate file size
-    if (selectedFile.size > maxSizeBytes) {
-      setError(`The file exceeds the maximum size of ${maxSizeMB}MB.`);
-      e.target.value = "";
-      return;
-    }
-
-    // Validate file type
-    const fileExt = selectedFile.name.split(".").pop()?.toLowerCase() || "";
-    const fileType = selectedFile.type.split("/")[1];
-
-    if (
-      !acceptedFileTypes.includes(fileType) &&
-      !acceptedFileTypes.includes(`.${fileExt}`)
-    ) {
-      setError(
-        `Please upload a file with one of these extensions: ${acceptedFileTypes}`
+      // Transform categories from DB format to Option format
+      return data.map(
+        (category: { id: string; name: string; description?: string }) => ({
+          value: category.id,
+          label: category.name,
+          group: "Categories",
+          description: category.description || undefined,
+        })
       );
-      e.target.value = "";
-      return;
-    }
-
-    setFile(selectedFile);
-    setTitle(selectedFile.name.split(".")[0]); // Set initial title from filename
-
-    // Handle PDF files
-    if (fileExt === "pdf") {
-      setIsPdf(true);
-      if (pdfObjectUrl.current) {
-        URL.revokeObjectURL(pdfObjectUrl.current);
-      }
-      pdfObjectUrl.current = URL.createObjectURL(selectedFile);
-      setPreview(pdfObjectUrl.current);
-    }
-    // Handle image files
-    else if (selectedFile.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
-    } else {
-      // For non-image, non-PDF files, we'll use a generic preview
-      setPreview(null);
-    }
-
-    setSuccess("File selected successfully.");
-  };
-
-  // Clear selected file
-  const handleClearFile = () => {
-    setFile(null);
-    setPreview(null);
-    setProgress(0);
-    setError(null);
-    setSuccess(null);
-    setIsPdf(false);
-    if (pdfObjectUrl.current) {
-      URL.revokeObjectURL(pdfObjectUrl.current);
-      pdfObjectUrl.current = null;
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      toast.error("Không thể tải danh sách danh mục");
+      return [];
     }
   };
 
-  // Simulated async search for category options
-  const handleCategorySearch = async (
-    searchTerm: string
-  ): Promise<Option[]> => {
-    // Simulate network delay
+  const { data: categoryOptions = [], isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Handle search within the already fetched categories
+  const handleSearch = async (searchTerm: string): Promise<Option[]> => {
+    // Simulate network delay for search
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    if (!searchTerm) return documentCategories;
+    if (!searchTerm) return categoryOptions;
 
-    return documentCategories.filter(
+    return categoryOptions.filter(
       (category) =>
         category.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (typeof category.group === "string" &&
-          category.group.toLowerCase().includes(searchTerm.toLowerCase()))
+          category.group.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (category.description &&
+          typeof category.description === "string" &&
+          category.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   };
 
+  return { handleSearch, categoryOptions, isLoading };
+};
+
+/**
+ * Document Metadata Form Component
+ */
+interface MetadataFormProps {
+  title: string;
+  setTitle: (value: string) => void;
+  description: string;
+  setDescription: (value: string) => void;
+  selectedCategories: Option[];
+  setSelectedCategories: (categories: Option[]) => void;
+  onError: (error: string) => void;
+  disabled: boolean;
+  isLoadingCategories: boolean;
+}
+
+function DocumentMetadataForm({
+  title,
+  setTitle,
+  description,
+  setDescription,
+  selectedCategories,
+  setSelectedCategories,
+  onError,
+  disabled,
+  isLoadingCategories,
+}: MetadataFormProps) {
+  const { handleSearch, categoryOptions } = useCategorySearch();
+
+  return (
+    <div className="space-y-5 py-2">
+      <div className="grid gap-2">
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Document title"
+          disabled={disabled}
+          required
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="category">Categories</Label>
+        <div className="relative">
+          <MultipleSelector
+            commandProps={{
+              label: "Select categories",
+            }}
+            value={selectedCategories}
+            onChange={setSelectedCategories}
+            defaultOptions={categoryOptions.slice(0, 5)}
+            onSearch={handleSearch}
+            placeholder="Search or select up to 3 categories"
+            hidePlaceholderWhenSelected
+            disabled={disabled || isLoadingCategories}
+            emptyIndicator={
+              <p className="text-center text-sm">
+                No matching categories found
+              </p>
+            }
+            loadingIndicator={
+              <div className="flex items-center justify-center p-4">
+                <div className="h-6 w-6 animate-spin rounded-full border-b-2"></div>
+                <span className="ml-2 text-sm">Loading categories...</span>
+              </div>
+            }
+            maxSelected={3}
+            onMaxSelected={(max) =>
+              onError(`You can select up to ${max} categories`)
+            }
+            groupBy="group"
+            creatable
+            triggerSearchOnFocus
+            delay={300}
+          />
+          {selectedCategories.length === 0 && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              First category will be used for document organization
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="description">Description (optional)</Label>
+        <textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Provide a brief description of this document"
+          className="min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus:outline-none"
+          disabled={disabled}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function FileUpload({
+  onFileUploaded,
+  acceptedFileTypes = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip",
+  maxSizeMB = 10,
+  bucketName = "documents",
+  path = "",
+}: {
+  onFileUploaded?: (fileUrl: string, fileData: FileData) => void;
+  redirectAfterUpload?: boolean;
+  acceptedFileTypes?: string;
+  maxSizeMB?: number;
+  bucketName?: string;
+  path?: string;
+}) {
+  const router = useRouter();
+  const supabase = createClient();
+  const { isLoading: isLoadingCategories } = useCategorySearch();
+
+  // Convert file extensions to MIME types for Supabase upload
+  const allowedMimeTypes = acceptedFileTypes.split(",").map((type) => {
+    if (type.startsWith(".")) {
+      return getMimeType(type.substring(1));
+    }
+    return type;
+  });
+
+  // Form state
+  const [title, setTitle] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<Option[]>([]);
+  const [description, setDescription] = useState("");
+
+  // UI state
+  const [isPdf, setIsPdf] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Initialize Supabase upload hook with normalizeFilenames option
+  const uploadProps = useSupabaseUpload({
+    bucketName,
+    path,
+    allowedMimeTypes,
+    maxFileSize: maxSizeMB * 1024 * 1024,
+    maxFiles: 1,
+    upsert: true,
+    normalizeFilenames: true, // Enable filename normalization in the hook
+  });
+
+  const {
+    files,
+    onUpload: supabaseUpload,
+    loading,
+    getStoragePath,
+    getNormalizedFilename,
+  } = uploadProps;
+
+  // Set PDF detection and initial title
+  useEffect(() => {
+    if (files.length > 0) {
+      const file = files[0];
+      setIsPdf(file.type === "application/pdf");
+
+      // Set title from filename if not already set
+      if (!title) {
+        const filename = file.name.split(".")[0];
+        setTitle(filename);
+      }
+    }
+  }, [files, title]);
+
   // Handle file upload
   const handleUpload = async () => {
-    setError(null);
-    setSuccess(null);
-
-    if (!file || !title || selectedCategories.length === 0) {
-      setError(
+    // Validate required fields
+    if (files.length === 0 || !title || selectedCategories.length === 0) {
+      toast.error(
         "Please provide a title, select at least one category, and select a file"
       );
       return;
@@ -198,362 +275,176 @@ export function FileUpload({
 
     try {
       setUploading(true);
-      setProgress(10);
+      toast.loading("Uploading document...", {
+        id: "upload-toast",
+        description: "Please wait while we upload your document.",
+      });
 
-      // Simulate progress updates during upload
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
+      // Check if bucket exists and create it if it doesn't
+      const { error: bucketError } =
+        await supabase.storage.getBucket(bucketName);
+      if (bucketError) {
+        const { error } = await supabase.storage.createBucket(bucketName, {
+          public: true,
         });
-      }, 300);
 
-      try {
-        // Generate a unique file path to avoid collisions
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
+        if (error) {
+          toast.error(`Failed to create storage bucket: ${error.message}`);
+          throw new Error(error.message);
+        }
+      }
 
-        // Use primary category for folder structure
-        const category = selectedCategories[0].value;
-        const filePath = `${category.toLowerCase()}/${fileName}`;
+      await supabaseUpload();
 
-        // Upload the file to Supabase Storage
-        await uploadFile(file, filePath);
+      // Get the original file and its normalized name
+      const file = files[0];
+      const normalizedFileName = getNormalizedFilename(file.name);
 
-        // Get the public URL of the uploaded file
-        const fileUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/documents/${filePath}`;
+      // Get the storage path (with normalized filename)
+      const filePath = getStoragePath(file.name);
 
-        setProgress(100);
-        clearInterval(progressInterval);
+      // Get public URL
+      const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+      const fileUrl = data.publicUrl;
 
-        const fileData = {
-          id: uuidv4(),
-          name: title,
+      // Document data to save to the database
+      const documentData = {
+        title,
+        description: description || undefined,
+        fileUrl,
+        fileType: file.type,
+        fileSize: `${Math.round(file.size / 1024)} KB`,
+        categoryId: selectedCategories[0].value,
+        published: true,
+      };
+
+      // Save document to database
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(documentData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save document");
+      }
+
+      const result = await response.json();
+      console.log("Document saved to database:", result);
+
+      toast.success("Document uploaded successfully!", {
+        id: "upload-toast",
+        duration: 2000,
+      });
+
+      // Call the onFileUploaded callback if provided
+      if (onFileUploaded) {
+        onFileUploaded(fileUrl, {
+          id: result.id,
+          name: normalizedFileName, // Use normalized name for consistency
           size: file.size,
           type: file.type,
           path: filePath,
           url: fileUrl,
-          categories: selectedCategories.map((cat) => cat.label).join(", "),
-        };
-
-        // Call the callback if provided
-        if (onFileUploaded) {
-          onFileUploaded(fileUrl, fileData);
-        }
-
-        setSuccess("Document uploaded successfully! Redirecting...");
-
-        // Optionally redirect after upload
-        if (redirectAfterUpload) {
-          setTimeout(() => {
-            router.push("/");
-          }, 2000);
-        }
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        setError("There was an error uploading your file. Please try again.");
-        clearInterval(progressInterval);
+          categories: selectedCategories.map((c) => c.label).join(", "),
+        });
       }
+
+      setTimeout(() => {
+        router.push("/my-library");
+      }, 1500);
+    } catch (error) {
+      console.error("Error in upload process:", error);
+      toast.error(
+        `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { id: "upload-toast" }
+      );
     } finally {
       setUploading(false);
     }
   };
 
-  // Get file size in human-readable format
-  const getFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + " B";
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + " KB";
-    else return (bytes / 1048576).toFixed(2) + " MB";
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="w-full px-4 py-6 md:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-3xl">
-        <h1 className="text-3xl font-bold">Upload Document</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl font-bold md:text-3xl">Upload Document</h1>
+        <p className="text-muted-foreground mt-1 text-sm md:text-base">
           Add new documents to your library
         </p>
       </div>
 
-      <Card className="bg-card-dark mx-auto w-full max-w-3xl border border-gray-800 bg-black text-white shadow-md">
-        <CardHeader className="border-b border-gray-800 bg-gray-900/50 px-6 pb-4 pt-4">
-          <div className="flex items-start justify-between">
+      <Card className="mx-auto mt-6 w-full max-w-3xl">
+        <CardHeader className="px-4 py-4 sm:px-6">
+          <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
             <div>
-              <CardTitle className="text-xl">Upload Document</CardTitle>
-              <CardDescription className="mt-1 text-gray-400">
-                Upload a document to your library. Supported formats include
-                PDF, Word, Excel, PowerPoint, and more.
+              <CardTitle className="text-lg sm:text-xl">
+                Upload Document
+              </CardTitle>
+              <CardDescription className="mt-1 text-sm">
+                Supported formats include PDF, Word, Excel, PowerPoint, and
+                more.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 px-6 pt-6">
-          {error && (
-            <Alert
-              variant="destructive"
-              className="border-red-900/30 bg-red-900/20 text-red-400"
-            >
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        <CardContent className="space-y-4 px-4 sm:px-6">
+          {/* Dropzone with hidden upload button */}
+          <div className="rounded-lg">
+            <div className="dropzone-wrapper">
+              <Dropzone {...uploadProps} className="rounded-lg border-0">
+                <DropzoneEmptyState />
+                <DropzoneContent />
+              </Dropzone>
 
-          {success && !error && (
-            <Alert className="border-green-900/50 bg-green-900/20 text-green-400">
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* File drop zone */}
-          <div
-            className={`rounded-lg border-2 border-dashed bg-gray-900/80 p-4 ${
-              file ? "border-primary/50" : "border-gray-700"
-            }`}
-          >
-            {!file ? (
-              <div className="flex flex-col items-center justify-center py-6">
-                <UploadIcon className="mb-4 h-12 w-12 text-gray-500" />
-                <p className="mb-2 text-base font-medium">
-                  Upload a document to your library
-                </p>
-                <p className="mb-6 text-sm text-gray-500">
-                  Supported formats include PDF, Word, Excel, PowerPoint, and
-                  more
-                </p>
-                <Button
-                  variant="outline"
-                  className="relative cursor-pointer overflow-hidden border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700"
-                  size="lg"
-                >
-                  Browse files
-                  <Input
-                    id="file-upload"
-                    type="file"
-                    className="absolute left-0 top-0 h-full w-full cursor-pointer opacity-0"
-                    accept={acceptedFileTypes}
-                    onChange={handleFileChange}
-                    disabled={uploading}
-                  />
-                </Button>
-                <p className="mt-4 text-xs text-gray-500">
-                  Maximum file size: {maxSizeMB}MB
-                </p>
-              </div>
-            ) : (
-              <div className="relative">
-                {preview && isPdf ? (
-                  <div>
-                    <div className="relative overflow-hidden rounded-md border border-gray-800 bg-gray-900 p-1">
-                      <div className="mb-2 flex items-center justify-between px-1">
-                        <div className="text-sm font-medium">{file.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {getFileSize(file.size)}
-                        </div>
-                      </div>
-                      <div className="relative h-72 w-full overflow-hidden rounded bg-black">
-                        <iframe
-                          src={preview}
-                          title="PDF Preview"
-                          className="h-full w-full border-0"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="absolute -right-2 -top-2 h-7 w-7 rounded-full border border-gray-700 bg-gray-800 text-gray-400 shadow-sm hover:bg-gray-700"
-                      onClick={handleClearFile}
-                      disabled={uploading}
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : preview ? (
-                  <div>
-                    <div className="relative overflow-hidden rounded-md border border-gray-800 bg-gray-900 p-1">
-                      <div className="mb-2 flex items-center justify-between px-1">
-                        <div className="text-sm font-medium">{file.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {getFileSize(file.size)}
-                        </div>
-                      </div>
-                      <div className="relative h-48 w-full rounded bg-black">
-                        <Image
-                          src={preview}
-                          alt="File preview"
-                          fill
-                          className="rounded object-contain"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="absolute -right-2 -top-2 h-7 w-7 rounded-full border border-gray-700 bg-gray-800 text-gray-400 shadow-sm hover:bg-gray-700"
-                      onClick={handleClearFile}
-                      disabled={uploading}
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="relative overflow-hidden rounded-md border border-gray-800 bg-gray-900 p-1">
-                      <div className="mb-2 flex items-center justify-between px-1">
-                        <div className="text-sm font-medium">{file.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {getFileSize(file.size)}
-                        </div>
-                      </div>
-                      <div className="flex h-40 items-center justify-center rounded bg-gray-900">
-                        <div className="text-center">
-                          <FileIcon className="mx-auto mb-2 h-12 w-12 text-gray-600" />
-                          <p className="text-sm text-gray-500">
-                            No preview available
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="absolute -right-2 -top-2 h-7 w-7 rounded-full border border-gray-700 bg-gray-800 text-gray-400 shadow-sm hover:bg-gray-700"
-                      onClick={handleClearFile}
-                      disabled={uploading}
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+              {/* Custom PDF Preview */}
+              {isPdf && files.length > 0 && <PdfPreview file={files[0]} />}
+            </div>
           </div>
 
-          {file && (
+          {files.length > 0 && (
             <>
-              <Separator className="my-4 bg-gray-800" />
+              <Separator className="my-4" />
 
-              {/* File metadata */}
-              <div className="space-y-5 py-2">
-                <div className="grid gap-2">
-                  <Label
-                    htmlFor="title"
-                    className="text-sm font-medium text-gray-300"
-                  >
-                    Title
-                  </Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Document title"
-                    disabled={uploading}
-                    required
-                    className="h-10 border-gray-800 bg-gray-900 text-white placeholder:text-gray-500"
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label
-                    htmlFor="category"
-                    className="text-sm font-medium text-gray-300"
-                  >
-                    Categories
-                  </Label>
-                  <div className="relative">
-                    <MultipleSelector
-                      commandProps={{
-                        label: "Select categories",
-                      }}
-                      value={selectedCategories}
-                      onChange={setSelectedCategories}
-                      defaultOptions={documentCategories.slice(0, 5)} // Show only first 5 initially
-                      onSearch={handleCategorySearch}
-                      placeholder="Search or select up to 3 categories"
-                      hidePlaceholderWhenSelected
-                      disabled={uploading}
-                      emptyIndicator={
-                        <p className="text-center text-sm">
-                          No matching categories found
-                        </p>
-                      }
-                      loadingIndicator={
-                        <div className="flex items-center justify-center p-4">
-                          <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2"></div>
-                          <span className="ml-2 text-sm">
-                            Loading categories...
-                          </span>
-                        </div>
-                      }
-                      maxSelected={3}
-                      onMaxSelected={(max) =>
-                        setError(`You can select up to ${max} categories`)
-                      }
-                      groupBy="group"
-                      className="min-h-10 border-gray-800 bg-gray-900"
-                      badgeClassName="bg-gray-800 text-gray-200 border-gray-700"
-                      creatable
-                      triggerSearchOnFocus
-                      delay={300}
-                    />
-                    {selectedCategories.length === 0 && (
-                      <p className="mt-1 text-xs text-gray-500">
-                        First category will be used for document organization
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label
-                    htmlFor="description"
-                    className="text-sm font-medium text-gray-300"
-                  >
-                    Description (optional)
-                  </Label>
-                  <textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide a brief description of this document"
-                    className="min-h-[80px] w-full rounded-md border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-gray-700 focus:outline-none"
-                    disabled={uploading}
-                  />
-                </div>
-              </div>
-
-              {uploading && (
-                <div className="space-y-2">
-                  <Progress value={progress} className="h-2 bg-gray-800" />
-                  <p className="text-center text-sm text-gray-400">
-                    Uploading... {progress}%
-                  </p>
-                </div>
-              )}
+              {/* File metadata form */}
+              <DocumentMetadataForm
+                title={title}
+                setTitle={setTitle}
+                description={description}
+                setDescription={setDescription}
+                selectedCategories={selectedCategories}
+                setSelectedCategories={setSelectedCategories}
+                onError={(errorMsg) => toast.error(errorMsg)}
+                disabled={loading || uploading}
+                isLoadingCategories={isLoadingCategories}
+              />
             </>
           )}
         </CardContent>
-        <CardFooter className="flex items-center justify-end gap-3 border-t border-gray-800 px-6 py-4">
+        <CardFooter className="flex flex-col items-stretch space-y-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:space-x-3 sm:space-y-0 sm:px-6">
           <Button
             variant="outline"
             onClick={() => router.back()}
-            disabled={uploading}
-            className="h-10 border-gray-700 bg-gray-800 px-5 text-gray-300 hover:bg-gray-700"
+            disabled={loading || uploading}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
           <Button
             onClick={handleUpload}
             disabled={
-              !file || uploading || !title || selectedCategories.length === 0
+              files.length === 0 ||
+              loading ||
+              uploading ||
+              !title ||
+              selectedCategories.length === 0
             }
-            className="bg-primary hover:bg-primary/90 h-10 px-5 font-medium text-white"
+            className="w-full sm:w-auto"
           >
-            {uploading ? "Uploading..." : "Upload Document"}
+            {loading || uploading ? "Uploading..." : "Upload Document"}
           </Button>
         </CardFooter>
       </Card>

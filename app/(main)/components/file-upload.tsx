@@ -271,6 +271,24 @@ export function FileUpload({
       const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
       const fileUrl = data.publicUrl;
 
+      // Gọi API để tạo thumbnail
+      const thumbnailResponse = await fetch("/api/generate-thumbnail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileUrl,
+          fileName: normalizedFileName,
+        }),
+      });
+
+      let thumbnailUrl = null;
+      if (thumbnailResponse.ok) {
+        const thumbnailData = await thumbnailResponse.json();
+        thumbnailUrl = thumbnailData.thumbnailUrl;
+      }
+
       // Document data to save to the database
       const documentData = {
         title,
@@ -280,6 +298,7 @@ export function FileUpload({
         fileSize: `${Math.round(file.size / 1024)} KB`,
         categoryId: selectedCategories[0].value,
         published: true,
+        thumbnailUrl,
       };
 
       // Save document to database

@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -23,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import MultipleSelector, { Option } from "@/components/ui/multiselect";
 import { Separator } from "@/components/ui/separator";
+import { useCategorySearch } from "@/hooks/use-category-search";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { createClient } from "@/lib/supabase/client";
 import { getMimeType } from "@/lib/utils";
@@ -37,64 +37,6 @@ export interface FileData {
   url: string;
   categories: string;
 }
-
-/**
- * Custom hook for category search and fetching from API
- */
-const useCategorySearch = () => {
-  // Fetch all categories from the API
-  const fetchCategories = async (): Promise<Option[]> => {
-    try {
-      const response = await fetch("/api/categories");
-
-      if (!response.ok) {
-        throw new Error(`Error fetching categories: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      // Transform categories from DB format to Option format
-      return data.map(
-        (category: { id: string; name: string; description?: string }) => ({
-          value: category.id,
-          label: category.name,
-          group: "Categories",
-          description: category.description || undefined,
-        })
-      );
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-      toast.error("Không thể tải danh sách danh mục");
-      return [];
-    }
-  };
-
-  const { data: categoryOptions = [], isLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: fetchCategories,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Handle search within the already fetched categories
-  const handleSearch = async (searchTerm: string): Promise<Option[]> => {
-    // Simulate network delay for search
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    if (!searchTerm) return categoryOptions;
-
-    return categoryOptions.filter(
-      (category) =>
-        category.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (typeof category.group === "string" &&
-          category.group.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (category.description &&
-          typeof category.description === "string" &&
-          category.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  };
-
-  return { handleSearch, categoryOptions, isLoading };
-};
 
 /**
  * Document Metadata Form Component
@@ -122,7 +64,34 @@ function DocumentMetadataForm({
   disabled,
   isLoadingCategories,
 }: MetadataFormProps) {
-  const { handleSearch, categoryOptions } = useCategorySearch();
+  const { handleSearch, categoryOptions, createCategory } = useCategorySearch();
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+  // Custom handler for creatable items
+  const handleSelectCreateOption = async (inputValue: string) => {
+    if (!inputValue) return;
+
+    setIsCreatingCategory(true);
+    try {
+      // Create the category in the backend
+      const newCategory = await createCategory(inputValue);
+
+      if (newCategory) {
+        // Add the new category to selected categories
+        const updatedCategories = [...selectedCategories, newCategory];
+        setSelectedCategories(updatedCategories);
+        toast.success(`Đã tạo danh mục "${inputValue}"`);
+      } else {
+        // Show error message
+        onError(`Không thể tạo danh mục "${inputValue}"`);
+      }
+    } catch (error) {
+      console.error("Failed to create category:", error);
+      onError(`Không thể tạo danh mục "${inputValue}"`);
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
 
   return (
     <div className="space-y-5 py-2">
@@ -151,7 +120,7 @@ function DocumentMetadataForm({
             onSearch={handleSearch}
             placeholder="Search or select up to 3 categories"
             hidePlaceholderWhenSelected
-            disabled={disabled || isLoadingCategories}
+            disabled={disabled || isLoadingCategories || isCreatingCategory}
             emptyIndicator={
               <p className="text-center text-sm">
                 No matching categories found
@@ -169,6 +138,7 @@ function DocumentMetadataForm({
             }
             groupBy="group"
             creatable
+            onCreateOption={handleSelectCreateOption}
             triggerSearchOnFocus
             delay={300}
           />
@@ -213,7 +183,6 @@ export function FileUpload({
   const supabase = createClient();
   const { isLoading: isLoadingCategories } = useCategorySearch();
 
-  // Convert file extensions to MIME types for Supabase upload
   const allowedMimeTypes = acceptedFileTypes.split(",").map((type) => {
     if (type.startsWith(".")) {
       return getMimeType(type.substring(1));
@@ -221,16 +190,13 @@ export function FileUpload({
     return type;
   });
 
-  // Form state
   const [title, setTitle] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Option[]>([]);
   const [description, setDescription] = useState("");
 
-  // UI state
   const [isPdf, setIsPdf] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Initialize Supabase upload hook with normalizeFilenames option
   const uploadProps = useSupabaseUpload({
     bucketName,
     path,
@@ -238,7 +204,7 @@ export function FileUpload({
     maxFileSize: maxSizeMB * 1024 * 1024,
     maxFiles: 1,
     upsert: true,
-    normalizeFilenames: true, // Enable filename normalization in the hook
+    normalizeFilenames: true,
   });
 
   const {
@@ -263,7 +229,6 @@ export function FileUpload({
     }
   }, [files, title]);
 
-  // Handle file upload
   const handleUpload = async () => {
     // Validate required fields
     if (files.length === 0 || !title || selectedCategories.length === 0) {
@@ -300,10 +265,7 @@ export function FileUpload({
       const file = files[0];
       const normalizedFileName = getNormalizedFilename(file.name);
 
-      // Get the storage path (with normalized filename)
       const filePath = getStoragePath(file.name);
-
-      // Get public URL
       const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
       const fileUrl = data.publicUrl;
 
@@ -333,7 +295,6 @@ export function FileUpload({
       }
 
       const result = await response.json();
-      console.log("Document saved to database:", result);
 
       toast.success("Document uploaded successfully!", {
         id: "upload-toast",
@@ -344,7 +305,7 @@ export function FileUpload({
       if (onFileUploaded) {
         onFileUploaded(fileUrl, {
           id: result.id,
-          name: normalizedFileName, // Use normalized name for consistency
+          name: normalizedFileName,
           size: file.size,
           type: file.type,
           path: filePath,

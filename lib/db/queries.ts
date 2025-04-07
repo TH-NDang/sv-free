@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { categories, documents } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, like } from "drizzle-orm";
 
 // ==========================================
 // Document Types
@@ -52,6 +52,15 @@ export interface UpdateCategoryData {
   description?: string | null;
 }
 
+/**
+ * Type for category query parameters
+ */
+export interface CategoryQueryParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 // ==========================================
 // Document Queries
 // ==========================================
@@ -61,9 +70,6 @@ export interface UpdateCategoryData {
  */
 export async function createDocument(data: CreateDocumentData) {
   try {
-    console.log("Creating document with data:", data);
-
-    // Prepare document data with defaults for optional fields
     const documentData = {
       title: data.title,
       description: data.description || null,
@@ -178,9 +184,33 @@ export async function getDocumentById(id: string) {
 /**
  * Get all categories
  */
-export async function getCategories() {
+export async function getCategories(params: CategoryQueryParams = {}) {
+  const { search, page = 1, limit = 50 } = params;
+  const offset = (page - 1) * limit;
+
   try {
-    return await db.select().from(categories).orderBy(categories.name);
+    if (search) {
+      // If there's a search term, filter by name
+      const results = await db
+        .select()
+        .from(categories)
+        .where(like(categories.name, `%${search}%`))
+        .orderBy(categories.name)
+        .limit(limit)
+        .offset(offset);
+
+      return results;
+    } else {
+      // No search, return all with pagination
+      const results = await db
+        .select()
+        .from(categories)
+        .orderBy(categories.name)
+        .limit(limit)
+        .offset(offset);
+
+      return results;
+    }
   } catch (error) {
     console.error("Error fetching categories:", error);
     throw new Error("Không thể lấy danh sách danh mục");

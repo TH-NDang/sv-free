@@ -1,8 +1,8 @@
-import { createDocument } from "@/lib/db/queries";
 import { auth } from "@/lib/auth";
+import { createDocument, getDocuments } from "@/lib/db/queries";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { headers } from "next/headers";
 
 const documentSchema = z.object({
   title: z
@@ -63,6 +63,49 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : "Lỗi không xác định";
     return NextResponse.json(
       { error: "Không thể tạo tài liệu", message: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const categoryId = searchParams.get("category") || undefined;
+    const myUploads = searchParams.get("myUploads") === "true";
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const offset = parseInt(searchParams.get("offset") || "0");
+
+    let authorId: string | undefined = undefined;
+
+    if (myUploads) {
+      // Get the current user session
+      const session = await auth.api.getSession({
+        headers: await headers(),
+      });
+
+      if (!session) {
+        return NextResponse.json(
+          { error: "Bạn cần đăng nhập" },
+          { status: 401 }
+        );
+      }
+
+      authorId = session.user.id;
+    }
+
+    const results = await getDocuments({
+      categoryId,
+      authorId,
+      limit,
+      offset,
+    });
+
+    return NextResponse.json(results);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return NextResponse.json(
+      { error: "Không thể lấy danh sách tài liệu" },
       { status: 500 }
     );
   }

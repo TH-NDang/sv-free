@@ -1,7 +1,7 @@
 "use client";
 
 import { DocumentsGrid } from "@/app/(main)/components/documents-grid";
-import { generateSampleDocuments } from "@/app/(main)/types/document";
+import { Document } from "@/app/(main)/types/document";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,32 +12,89 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { useQuery } from "@tanstack/react-query";
 import { BookmarkIcon, FileUpIcon, PlusIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-// Generate sample documents
-const myDocuments = generateSampleDocuments(8);
+interface DbDocument {
+  id: string;
+  title: string;
+  description?: string | null;
+  fileUrl: string;
+  fileType?: string | null;
+  fileSize?: string | null;
+  categoryId?: string | null;
+  authorId?: string | null;
+  thumbnailUrl?: string | null;
+  published?: boolean;
+  downloadCount?: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string | null;
+  } | null;
+}
+
+const fetchUserDocuments = async () => {
+  const response = await fetch("/api/documents?myUploads=true");
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return response.json() as Promise<DbDocument[]>;
+};
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("uploads");
   const { data: session } = authClient.useSession();
   const user = session?.user;
 
-  const uploads = [...myDocuments].sort(
-    (a, b) =>
-      new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-  );
+  const {
+    data: dbDocuments = [],
+    isLoading: isLoadingDocuments,
+    error,
+  } = useQuery({
+    queryKey: ["userDocuments", user?.id],
+    queryFn: fetchUserDocuments,
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
+    enabled: !!user,
+  });
 
-  const savedDocuments = [...myDocuments]
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 4);
+  // Convert DB documents to UI document format
+  const uploads: Document[] = dbDocuments.map((doc) => ({
+    id: doc.id,
+    title: doc.title,
+    description: doc.description || "",
+    category: doc.category?.name || "Uncategorized",
+    author: user?.name || "Unknown",
+    uploadDate: new Date(doc.createdAt).toISOString(),
+    downloadCount: parseInt(doc.downloadCount || "0"),
+    fileSize: doc.fileSize || "Unknown",
+    fileType: doc.fileType || "Unknown",
+    thumbnailUrl: doc.thumbnailUrl || "/placeholder-thumbnail.jpg",
+    status: doc.published ? "Published" : "Draft",
+  }));
+
+  // Use a subset for saved documents
+  const savedDocuments = uploads.slice(0, 4);
 
   const userStats = {
     uploads: uploads.length,
     downloads: uploads.reduce((sum, doc) => sum + doc.downloadCount, 0),
     savedDocuments: savedDocuments.length,
   };
+
+  if (isLoadingDocuments) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -118,7 +175,16 @@ export default function ProfilePage() {
           </TabsList>
 
           <TabsContent value="uploads" className="mt-6">
-            {uploads.length > 0 ? (
+            {isLoadingDocuments ? (
+              <div className="flex h-[200px] items-center justify-center">
+                <p>Loading your documents...</p>
+              </div>
+            ) : error ? (
+              <div className="flex h-[200px] flex-col items-center justify-center text-red-500">
+                <p>Error loading documents</p>
+                <p className="text-sm">{(error as Error).message}</p>
+              </div>
+            ) : uploads.length > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">
@@ -152,7 +218,16 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="saved" className="mt-6">
-            {savedDocuments.length > 0 ? (
+            {isLoadingDocuments ? (
+              <div className="flex h-[200px] items-center justify-center">
+                <p>Loading your saved documents...</p>
+              </div>
+            ) : error ? (
+              <div className="flex h-[200px] flex-col items-center justify-center text-red-500">
+                <p>Error loading documents</p>
+                <p className="text-sm">{(error as Error).message}</p>
+              </div>
+            ) : savedDocuments.length > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Saved Documents</h2>

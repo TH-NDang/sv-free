@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -182,6 +183,7 @@ export function FileUpload({
   const router = useRouter();
   const supabase = createClient();
   const { isLoading: isLoadingCategories } = useCategorySearch();
+  const queryClient = useQueryClient();
 
   const allowedMimeTypes = acceptedFileTypes.split(",").map((type) => {
     if (type.startsWith(".")) {
@@ -313,6 +315,9 @@ export function FileUpload({
           categories: selectedCategories.map((c) => c.label).join(", "),
         });
       }
+
+      // ensure fresh data when redirected
+      queryClient.invalidateQueries({ queryKey: ["userDocuments"] });
 
       setTimeout(() => {
         router.push("/my-library");

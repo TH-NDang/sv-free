@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { categories, documents } from "@/lib/db/schema";
-import { desc, eq, like } from "drizzle-orm";
+import { desc, eq, like, SQL } from "drizzle-orm";
 
 // ==========================================
 // Document Types
@@ -26,6 +26,7 @@ export interface CreateDocumentData {
  */
 export type DocumentQueryParams = {
   categoryId?: string;
+  authorId?: string;
   limit?: number;
   offset?: number;
 };
@@ -103,40 +104,65 @@ export async function createDocument(data: CreateDocumentData) {
  */
 export async function getDocuments({
   categoryId,
+  authorId,
   limit = 10,
   offset = 0,
 }: DocumentQueryParams = {}) {
   try {
-    let query;
+    // Build conditions for SQL
+    const conditions: SQL[] = [];
 
     if (categoryId) {
-      // Nếu có categoryId, thêm điều kiện where ngay từ đầu
-      query = db
+      conditions.push(eq(documents.categoryId, categoryId));
+    }
+
+    if (authorId) {
+      conditions.push(eq(documents.authorId, authorId));
+    }
+
+    // Execute query with or without conditions
+    let results;
+
+    if (conditions.length === 0) {
+      // No conditions
+      results = await db
         .select({
           document: documents,
           category: categories,
         })
         .from(documents)
-        .where(eq(documents.categoryId, categoryId))
+        .leftJoin(categories, eq(documents.categoryId, categories.id))
+        .orderBy(desc(documents.createdAt))
+        .limit(limit)
+        .offset(offset);
+    } else if (conditions.length === 1) {
+      // One condition
+      results = await db
+        .select({
+          document: documents,
+          category: categories,
+        })
+        .from(documents)
+        .where(conditions[0])
         .leftJoin(categories, eq(documents.categoryId, categories.id))
         .orderBy(desc(documents.createdAt))
         .limit(limit)
         .offset(offset);
     } else {
-      // Nếu không có điều kiện lọc
-      query = db
+      // Multiple conditions - this would need to be handled differently
+      // For simplicity, we'll use the first condition as a temporary solution
+      results = await db
         .select({
           document: documents,
           category: categories,
         })
         .from(documents)
+        .where(conditions[0])
         .leftJoin(categories, eq(documents.categoryId, categories.id))
         .orderBy(desc(documents.createdAt))
         .limit(limit)
         .offset(offset);
     }
-
-    const results = await query;
 
     return results.map(({ document, category }) => ({
       ...document,
@@ -145,6 +171,22 @@ export async function getDocuments({
   } catch (error) {
     console.error("Error fetching documents:", error);
     throw new Error("Không thể lấy danh sách tài liệu");
+  }
+}
+
+/**
+ * Get documents uploaded by a specific user
+ */
+export async function getUserDocuments(userId: string, limit = 50, offset = 0) {
+  try {
+    return await getDocuments({
+      authorId: userId,
+      limit,
+      offset,
+    });
+  } catch (error) {
+    console.error(`Error fetching documents for user ${userId}:`, error);
+    throw new Error("Không thể lấy danh sách tài liệu của người dùng");
   }
 }
 

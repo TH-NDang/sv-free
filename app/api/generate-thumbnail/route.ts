@@ -7,6 +7,10 @@ import { NextResponse } from "next/server";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+/**
+ * Document: https://www.npmjs.com/package/filepreview?activeTab=readme
+ */
+
 export async function POST(req: Request) {
   try {
     const session = await auth.api.getSession({

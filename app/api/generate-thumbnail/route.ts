@@ -39,9 +39,11 @@ export async function POST(req: Request) {
 
     // Tạo thumbnail với filepreview
     const options = {
-      width: 400,
-      height: 300,
-      quality: 90,
+      width: 800,
+      height: 600,
+      quality: 100,
+      density: 300,
+      background: "#FFFFFF",
     };
 
     await new Promise<void>((resolve, reject) => {

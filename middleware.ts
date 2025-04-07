@@ -9,32 +9,21 @@ export async function middleware(request: NextRequest) {
   const isOnLogin = request.nextUrl.pathname.startsWith("/auth/sign-in");
   const isOnSignup = request.nextUrl.pathname.startsWith("/auth/register");
 
-  const testRoutes = [""];
   const protectedRoutes = ["/my-library", "/settings", "/documents/upload"];
 
+  // Redirect from auth pages to home if already logged in
   if (isLoggedIn && (isOnLogin || isOnSignup)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (isOnLogin || testRoutes.includes(request.nextUrl.pathname)) {
-    return NextResponse.next();
-  }
-
-  if (isOnLogin && isLoggedIn) {
-    return NextResponse.redirect(new URL("/my-library", request.url));
-  }
-
+  // For protected routes, check authentication
   if (protectedRoutes.includes(request.nextUrl.pathname)) {
-    if (isLoggedIn) {
-      return NextResponse.next();
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL("/auth/sign-in", request.url));
     }
-    return NextResponse.redirect(new URL("/auth/sign-in", request.url));
   }
 
-  if (isLoggedIn) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
+  // For all other routes, just continue
   return NextResponse.next();
 }
 

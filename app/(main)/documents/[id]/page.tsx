@@ -11,11 +11,11 @@ import {
   ShareIcon,
   UserIcon,
 } from "lucide-react";
-import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+import { DocumentViewer } from "@/components/document-viewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -96,7 +96,9 @@ export default function DocumentDetailPage() {
         <FileIcon className="text-muted-foreground h-16 w-16" />
         <h1 className="mt-4 text-2xl font-bold">Không tìm thấy tài liệu</h1>
         <p className="text-muted-foreground mt-2 text-center">
-          Tài liệu bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
+          {error instanceof Error
+            ? `Lỗi: ${error.message}`
+            : "Tài liệu bạn đang tìm kiếm không tồn tại hoặc đã bị xóa."}
         </p>
         <Button onClick={handleGoBack} className="mt-6">
           Quay lại
@@ -122,13 +124,21 @@ export default function DocumentDetailPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <EyeIcon className="mr-2 h-4 w-4" />
-            Xem
+          <Button variant="outline" size="sm" asChild>
+            <a
+              href={document.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <EyeIcon className="mr-2 h-4 w-4" />
+              Xem
+            </a>
           </Button>
-          <Button variant="outline" size="sm">
-            <DownloadIcon className="mr-2 h-4 w-4" />
-            Tải xuống
+          <Button variant="outline" size="sm" asChild>
+            <a href={document.fileUrl} download>
+              <DownloadIcon className="mr-2 h-4 w-4" />
+              Tải xuống
+            </a>
           </Button>
           <Button variant="outline" size="sm">
             <ShareIcon className="mr-2 h-4 w-4" />
@@ -152,21 +162,12 @@ export default function DocumentDetailPage() {
               </TabsList>
 
               <TabsContent value="preview" className="min-h-[500px]">
-                <div className="relative aspect-video w-full overflow-hidden rounded-md border">
-                  {/* This would be a PDF viewer or document preview in a real app */}
-                  <Image
-                    src={document.thumbnailUrl || "/placeholder.svg"}
-                    alt={document.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                    <Button>
-                      <EyeIcon className="mr-2 h-4 w-4" />
-                      Xem tài liệu đầy đủ
-                    </Button>
-                  </div>
-                </div>
+                <DocumentViewer
+                  fileUrl={document.fileUrl}
+                  fileType={document.fileType}
+                  title={document.title}
+                  thumbnailUrl={document.thumbnailUrl}
+                />
               </TabsContent>
 
               <TabsContent value="details">

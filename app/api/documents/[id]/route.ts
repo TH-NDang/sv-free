@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const documentId = params.id;
-
+    // Đảm bảo params là đối tượng và có thuộc tính id
+    const documentId = (await params).id;
     if (!documentId) {
       return NextResponse.json(
         { error: "ID tài liệu không hợp lệ" },

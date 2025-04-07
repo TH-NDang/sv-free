@@ -27,7 +27,15 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     ppr: "incremental",
+    // use by pdf-viewer.tsx
+    turbo: {
+      resolveAlias: {
+        canvas: "./empty-module.ts",
+      },
+    },
   },
+  // use by pdf-viewer.tsx
+  swcMinify: false,
 };
 
 export default nextConfig;

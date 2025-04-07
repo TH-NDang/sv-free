@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Document {
   id: string;
@@ -115,6 +114,9 @@ export default function DocumentDetailPage() {
           <Button variant="outline" size="icon" onClick={handleGoBack}>
             <ArrowLeftIcon className="h-4 w-4" />
           </Button>
+
+          <Separator orientation="vertical" className="h-4" />
+
           <div>
             <h1 className="text-2xl font-bold">{document.title}</h1>
             <p className="text-muted-foreground">
@@ -135,16 +137,19 @@ export default function DocumentDetailPage() {
             </a>
           </Button>
           <Button variant="outline" size="sm" asChild>
+            {/* ! TODO: implement download */}
             <a href={document.fileUrl} download>
               <DownloadIcon className="mr-2 h-4 w-4" />
               Tải xuống
             </a>
           </Button>
           <Button variant="outline" size="sm">
+            {/* ! TODO: implement share */}
             <ShareIcon className="mr-2 h-4 w-4" />
             Chia sẻ
           </Button>
           <Button variant="outline" size="icon" className="h-9 w-9">
+            {/* ! TODO: implement bookmark */}
             <BookmarkIcon className="h-4 w-4" />
           </Button>
         </div>
@@ -155,62 +160,14 @@ export default function DocumentDetailPage() {
         {/* Left side - document preview */}
         <div className="lg:col-span-2">
           <Card>
-            <Tabs defaultValue="preview" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="preview">Xem trước</TabsTrigger>
-                <TabsTrigger value="details">Chi tiết</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="preview" className="min-h-[500px]">
-                <DocumentViewer
-                  fileUrl={document.fileUrl}
-                  fileType={document.fileType}
-                  title={document.title}
-                  thumbnailUrl={document.thumbnailUrl}
-                />
-              </TabsContent>
-
-              <TabsContent value="details">
-                <CardContent className="p-6">
-                  <div className="grid gap-4">
-                    <div className="grid grid-cols-[1fr_2fr] gap-4">
-                      <div className="text-muted-foreground">Tiêu đề</div>
-                      <div>{document.title}</div>
-                    </div>
-                    <Separator />
-
-                    <div className="grid grid-cols-[1fr_2fr] gap-4">
-                      <div className="text-muted-foreground">Mô tả</div>
-                      <div>{document.description || "Không có mô tả"}</div>
-                    </div>
-                    <Separator />
-
-                    <div className="grid grid-cols-[1fr_2fr] gap-4">
-                      <div className="text-muted-foreground">Danh mục</div>
-                      <div>{document.category?.name || "Chưa phân loại"}</div>
-                    </div>
-                    <Separator />
-
-                    <div className="grid grid-cols-[1fr_2fr] gap-4">
-                      <div className="text-muted-foreground">Loại file</div>
-                      <div>{document.fileType || "Không xác định"}</div>
-                    </div>
-                    <Separator />
-
-                    <div className="grid grid-cols-[1fr_2fr] gap-4">
-                      <div className="text-muted-foreground">Kích thước</div>
-                      <div>{document.fileSize || "Không xác định"}</div>
-                    </div>
-                    <Separator />
-
-                    <div className="grid grid-cols-[1fr_2fr] gap-4">
-                      <div className="text-muted-foreground">Lượt tải</div>
-                      <div>{document.downloadCount || "0"}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </TabsContent>
-            </Tabs>
+            <CardContent className="min-h-[500px]">
+              <DocumentViewer
+                fileUrl={document.fileUrl}
+                fileType={document.fileType}
+                title={document.title}
+                thumbnailUrl={document.thumbnailUrl}
+              />
+            </CardContent>
           </Card>
         </div>
 
@@ -255,22 +212,6 @@ export default function DocumentDetailPage() {
                   <span className="ml-auto">
                     {document.downloadCount || "0"}
                   </span>
-                </div>
-
-                <Separator />
-
-                <div className="flex flex-col gap-2">
-                  <h4 className="font-medium">Hành động</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button className="w-full">
-                      <DownloadIcon className="mr-2 h-4 w-4" />
-                      Tải xuống
-                    </Button>
-                    <Button variant="outline" className="w-full">
-                      <ShareIcon className="mr-2 h-4 w-4" />
-                      Chia sẻ
-                    </Button>
-                  </div>
                 </div>
               </div>
             </CardContent>

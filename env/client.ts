@@ -13,12 +13,14 @@ export const env = createEnv({
     NEXT_PUBLIC_PROD_API_ENDPOINT: processEnv(z.string().url()),
     NEXT_PUBLIC_SUPABASE_URL: processEnv(z.string().url()),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: processEnv(z.string().min(1)),
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: processEnv(z.string().min(1)),
   },
   runtimeEnv: {
     NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT,
     NEXT_PUBLIC_PROD_API_ENDPOINT: process.env.NEXT_PUBLIC_PROD_API_ENDPOINT,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   },
   skipValidation:
     !!process.env.SKIP_ENV_VALIDATION ||

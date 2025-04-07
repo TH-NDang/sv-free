@@ -10,7 +10,6 @@ const processEnv = <T extends z.ZodTypeAny>(schema: T) =>
 export const env = createEnv({
   server: {
     DATABASE_URL: processEnv(z.string().url().min(1)),
-    GOOGLE_CLIENT_ID: processEnv(z.string().min(1)),
     GOOGLE_CLIENT_SECRET: processEnv(z.string().min(1)),
     BETTER_AUTH_SECRET: processEnv(z.string().min(1)),
     BETTER_AUTH_URL: processEnv(z.string().url()),

@@ -1,3 +1,4 @@
+import { OneTap } from "@/components/one-tap";
 import { AuthCard } from "@daveyplate/better-auth-ui";
 import { authViewPaths } from "@daveyplate/better-auth-ui/server";
 
@@ -14,6 +15,7 @@ export default async function AuthPage({
 
   return (
     <main className="flex grow flex-col items-center justify-center p-4">
+      <OneTap />
       <AuthCard pathname={pathname} />
     </main>
   );

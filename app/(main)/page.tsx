@@ -3,6 +3,7 @@ import { CategoryGrid } from "@/components/category-grid";
 import { CategoryTabs } from "@/components/category-tabs";
 import { DocumentListPopular } from "@/components/document-list-popular";
 import { DocumentListRecent } from "@/components/document-list-recent";
+import { OneTap } from "@/components/one-tap";
 import { SearchForm } from "@/components/search-form";
 import { UploadCTA } from "@/components/upload-cta";
 import { siteConfig } from "@/config/site";
@@ -55,6 +56,7 @@ export default async function HomePage({
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+      <OneTap />
       {/* Hero section with search */}
       <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center sm:p-8">
         <h1 className="mb-2 text-2xl font-bold tracking-tight sm:text-4xl">

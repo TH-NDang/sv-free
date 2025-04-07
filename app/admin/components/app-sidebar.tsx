@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  BarChart3,
-  Database,
-  FileText,
-  LayoutDashboard,
-  Settings,
-  Users,
-} from "lucide-react";
+import { Settings } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/app/admin/components/nav-main";
@@ -24,43 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UserButton } from "@daveyplate/better-auth-ui";
 import Link from "next/link";
-
-const data = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/admin",
-      icon: LayoutDashboard,
-    },
-    {
-      title: "Users",
-      url: "/admin/users",
-      icon: Users,
-    },
-    {
-      title: "Documents",
-      url: "/admin/documents",
-      icon: FileText,
-    },
-    {
-      title: "Analytics",
-      url: "/admin/analytics",
-      icon: BarChart3,
-    },
-  ],
-  navSecondary: [
-    {
-      name: "Export Data",
-      url: "/admin/exports",
-      icon: Database,
-    },
-    {
-      name: "Reports",
-      url: "/admin/reports",
-      icon: FileText,
-    },
-  ],
-};
+import { navAdmin } from "@/config/nav";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -81,8 +38,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} />
+        <NavMain items={navAdmin.navMain} />
+        <NavSecondary items={navAdmin.navSecondary} />
         <NavUtil className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

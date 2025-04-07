@@ -1,15 +1,9 @@
 "use client";
 
 import {
-  BookmarkIcon,
-  BookOpenIcon,
-  FileTextIcon,
   FolderIcon,
-  HomeIcon,
-  LifeBuoy,
   MenuIcon,
   PlusIcon,
-  SearchIcon,
   SettingsIcon,
   Share2Icon,
   UploadIcon,
@@ -22,51 +16,7 @@ import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
-
-// Dữ liệu từ app-sidebar
-const sidebarData = {
-  navMain: [
-    {
-      title: "Home",
-      url: "/",
-      icon: HomeIcon,
-    },
-    {
-      title: "Browse Documents",
-      url: "/documents",
-      icon: FileTextIcon,
-    },
-    {
-      title: "Advanced Search",
-      url: "/search",
-      icon: SearchIcon,
-    },
-    {
-      title: "Upload Document",
-      url: "/documents/upload",
-      icon: UploadIcon,
-    },
-  ],
-  navProfile: [
-    {
-      title: "My Uploads",
-      url: "/profile?tab=uploads",
-      icon: FileTextIcon,
-    },
-    {
-      title: "Saved Documents",
-      url: "/profile?tab=saved",
-      icon: BookmarkIcon,
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Help & Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-  ],
-};
+import { nav } from "@/config/nav";
 
 // Actions từ header
 const headerActions = [
@@ -79,17 +29,6 @@ const headerActions = [
 export function MobileNav() {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
-
-  // Derived breadcrumbs from pathname for secondary navigation
-  const breadcrumbs = React.useMemo(() => {
-    return pathname
-      .split("/")
-      .filter((path) => path !== "")
-      .map((path, index, array) => ({
-        label: path,
-        href: `/${array.slice(0, index + 1).join("/")}`,
-      }));
-  }, [pathname]);
 
   return (
     <div className="flex md:hidden">
@@ -118,7 +57,7 @@ export function MobileNav() {
                   Discovery
                 </div>
                 <div className="px-1 py-1">
-                  {sidebarData.navMain.map((item) => (
+                  {nav.navMain.map((item) => (
                     <MobileLink
                       key={item.url}
                       href={item.url}
@@ -136,35 +75,13 @@ export function MobileNav() {
                   ))}
                 </div>
 
-                {/* Current Section */}
-                {breadcrumbs.length > 0 && (
-                  <div className="mt-4">
-                    <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
-                      Current Section
-                    </div>
-                    <div className="px-1 py-1">
-                      {breadcrumbs.map((item) => (
-                        <MobileLink
-                          key={item.href}
-                          href={item.href}
-                          onOpenChange={setOpen}
-                          className="hover:bg-muted/30 flex items-center rounded-md px-3 py-2 capitalize"
-                        >
-                          <BookOpenIcon className="mr-3 h-4 w-4" />
-                          {item.label}
-                        </MobileLink>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Personal */}
                 <div className="mt-4">
                   <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
                     Personal
                   </div>
                   <div className="px-1 py-1">
-                    {sidebarData.navProfile.map((item) => (
+                    {nav.navProfile.map((item) => (
                       <MobileLink
                         key={item.url}
                         href={item.url}
@@ -209,7 +126,7 @@ export function MobileNav() {
                     Help & Support
                   </div>
                   <div className="px-1 py-1">
-                    {sidebarData.navSecondary.map((item) => (
+                    {nav.navProfile.map((item) => (
                       <MobileLink
                         key={item.url}
                         href={item.url}

@@ -38,8 +38,6 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  // use by pdf-viewer.tsx
-  swcMinify: false,
 };
 
 export default nextConfig;

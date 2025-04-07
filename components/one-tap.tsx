@@ -21,7 +21,7 @@ export function OneTap() {
       });
     };
     initOneTap();
-  }, []);
+  }, [router]);
 
   return null;
 }

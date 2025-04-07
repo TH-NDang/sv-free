@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { RedirectToSignIn, SignedIn } from "@daveyplate/better-auth-ui";
 import { BookmarkIcon, FileUpIcon, PlusIcon, UserIcon } from "lucide-react";
 import Link from "next/link";

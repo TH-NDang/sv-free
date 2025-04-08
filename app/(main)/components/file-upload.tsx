@@ -4,6 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
+
+import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 
 import {
   Dropzone,
@@ -25,19 +29,9 @@ import MultipleSelector, { Option } from "@/components/ui/multiselect";
 import { Separator } from "@/components/ui/separator";
 import { useCategorySearch } from "@/hooks/use-category-search";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
-import { createClient } from "@/lib/supabase/client";
+import { type Document } from "@/lib/db/schema";
 import { getMimeType } from "@/lib/utils";
 import { PdfPreview } from "./pdf-preview";
-
-export interface FileData {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  path: string;
-  url: string;
-  categories: string;
-}
 
 /**
  * Document Metadata Form Component
@@ -171,9 +165,10 @@ export function FileUpload({
   acceptedFileTypes = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip",
   maxSizeMB = 10,
   bucketName = "documents",
-  path = "",
+  redirectAfterUpload = false,
+  path,
 }: {
-  onFileUploaded?: (fileUrl: string, fileData: FileData) => void;
+  onFileUploaded?: (fileData: Document) => void;
   redirectAfterUpload?: boolean;
   acceptedFileTypes?: string;
   maxSizeMB?: number;
@@ -181,9 +176,13 @@ export function FileUpload({
   path?: string;
 }) {
   const router = useRouter();
-  const supabase = createClient();
-  const { isLoading: isLoadingCategories } = useCategorySearch();
   const queryClient = useQueryClient();
+  const supabase = createClient();
+  const { data: session, isPending: isLoadingSession } =
+    authClient.useSession();
+  const userId = session?.user?.id;
+
+  const { isLoading: isLoadingCategories } = useCategorySearch();
 
   const allowedMimeTypes = acceptedFileTypes.split(",").map((type) => {
     if (type.startsWith(".")) {
@@ -195,9 +194,17 @@ export function FileUpload({
   const [title, setTitle] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Option[]>([]);
   const [description, setDescription] = useState("");
-
   const [isPdf, setIsPdf] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [documentId, setDocumentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (userId && !documentId) {
+      setDocumentId(uuidv4());
+    }
+  }, [userId, documentId]);
+
+  const isProcessing = isLoadingCategories || uploading || isLoadingSession;
 
   const uploadProps = useSupabaseUpload({
     bucketName,
@@ -206,39 +213,55 @@ export function FileUpload({
     maxFileSize: maxSizeMB * 1024 * 1024,
     maxFiles: 1,
     upsert: true,
-    normalizeFilenames: true,
   });
 
   const {
     files,
-    onUpload: supabaseUpload,
-    loading,
-    getStoragePath,
-    getNormalizedFilename,
+    loading: isLoadingHookState,
+    open: openFileDialog,
   } = uploadProps;
 
-  // Set PDF detection and initial title
   useEffect(() => {
     if (files.length > 0) {
       const file = files[0];
       setIsPdf(file.type === "application/pdf");
-
-      // Set title from filename if not already set
       if (!title) {
-        const filename = file.name.split(".")[0];
-        setTitle(filename);
+        const filenameWithoutExt =
+          file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+        setTitle(filenameWithoutExt);
       }
     }
   }, [files, title]);
 
+  const getDynamicPath = (fileName: string) => {
+    if (!userId || !documentId) return null;
+    const extension = fileName.split(".").pop();
+    return `user_${userId}/${path ? `${path}/` : ""}${documentId}.${extension}`;
+  };
+
   const handleUpload = async () => {
-    // Validate required fields
+    if (!userId || !documentId) {
+      toast.error(
+        "User session not loaded or document ID not generated. Please try again."
+      );
+      return;
+    }
+
     if (files.length === 0 || !title || selectedCategories.length === 0) {
       toast.error(
         "Please provide a title, select at least one category, and select a file"
       );
       return;
     }
+
+    const file = files[0];
+    const storagePath = getDynamicPath(file.name);
+    if (!storagePath) {
+      toast.error("Could not generate storage path. Please try again.");
+      return;
+    }
+
+    const thumbnailStoragePath = `user_${userId}/${path ? `${path}/` : ""}${documentId}.webp`;
 
     try {
       setUploading(true);
@@ -247,82 +270,92 @@ export function FileUpload({
         description: "Please wait while we upload your document.",
       });
 
-      await supabaseUpload();
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(storagePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
 
-      // Get the original file and its normalized name
-      const file = files[0];
-      const normalizedFileName = getNormalizedFilename(file.name);
+      if (uploadError) {
+        console.error("Supabase upload error:", uploadError);
+        throw new Error(`Failed to upload: ${uploadError.message}`);
+      }
 
-      const filePath = getStoragePath(file.name);
-      const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
-      const fileUrl = data.publicUrl;
-
-      // Gọi API để tạo thumbnail
       const thumbnailResponse = await fetch("/api/generate-thumbnail", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fileUrl,
-          fileName: normalizedFileName,
+          documentId: documentId,
+          storagePath: storagePath,
+          thumbnailStoragePath: thumbnailStoragePath,
+          originalFilename: file.name,
         }),
       });
 
-      let thumbnailUrl = null;
+      let finalThumbnailPath: string | null = null;
       if (thumbnailResponse.ok) {
         const thumbnailData = await thumbnailResponse.json();
-        thumbnailUrl = thumbnailData.thumbnailUrl;
+        finalThumbnailPath =
+          thumbnailData.thumbnailStoragePath || thumbnailStoragePath;
+      } else {
+        let thumbErrorMsg = "Thumbnail generation failed or skipped.";
+        try {
+          const err = await thumbnailResponse.json();
+          thumbErrorMsg = err.message || err.error || thumbErrorMsg;
+        } catch {
+          /* ignore */
+        }
+        console.warn("Thumbnail generation error:", thumbErrorMsg);
       }
 
-      // Save document to database
+      const documentDataToSave = {
+        id: documentId,
+        title,
+        description: description || undefined,
+        originalFilename: file.name,
+        storagePath: storagePath,
+        fileType: file.type,
+        fileSize: file.size,
+        thumbnailStoragePath: finalThumbnailPath,
+        categoryId: selectedCategories[0].value,
+      };
+
       const response = await fetch("/api/documents", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title,
-          description: description || undefined,
-          fileUrl,
-          fileType: file.type,
-          fileSize: `${Math.round(file.size / 1024)} KB`,
-          categoryId: selectedCategories[0].value,
-          thumbnailUrl,
-        }),
+        body: JSON.stringify(documentDataToSave),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save document");
+        throw new Error(
+          errorData.message || "Failed to save document metadata"
+        );
       }
 
-      const result = await response.json();
+      const savedDocument = await response.json();
 
       toast.success("Document uploaded successfully!", {
         id: "upload-toast",
         duration: 2000,
       });
 
-      // Call the onFileUploaded callback if provided
       if (onFileUploaded) {
-        onFileUploaded(fileUrl, {
-          id: result.id,
-          name: normalizedFileName,
-          size: file.size,
-          type: file.type,
-          path: filePath,
-          url: fileUrl,
-          categories: selectedCategories.map((c) => c.label).join(", "),
-        });
+        onFileUploaded(savedDocument);
       }
 
-      // ensure fresh data when redirected
-      queryClient.invalidateQueries({ queryKey: ["userDocuments"] });
+      queryClient.invalidateQueries({ queryKey: ["userDocuments", userId] });
 
-      setTimeout(() => {
-        router.push("/my-library");
-      }, 1500);
+      if (redirectAfterUpload) {
+        setTimeout(() => {
+          router.push("/my-library");
+        }, 1500);
+      }
     } catch (error) {
       console.error("Error in upload process:", error);
       toast.error(
@@ -331,6 +364,13 @@ export function FileUpload({
       );
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Handle click manually to check disabled state
+  const handleOpenFileDialog = () => {
+    if (!isProcessing) {
+      openFileDialog();
     }
   };
 
@@ -348,46 +388,51 @@ export function FileUpload({
           <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
             <div>
               <CardTitle className="text-lg sm:text-xl">
-                Upload Document
+                1. Select File
               </CardTitle>
               <CardDescription className="mt-1 text-sm">
-                Supported formats include PDF, Word, Excel, PowerPoint, and
-                more.
+                Choose the document you want to upload (Max {maxSizeMB}MB).
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-
         <CardContent className="space-y-4 px-4 sm:px-6">
-          {/* Dropzone with hidden upload button */}
           <div className="rounded-lg">
             <div className="dropzone-wrapper">
-              <Dropzone {...uploadProps} className="rounded-lg border-0">
+              <Dropzone
+                {...uploadProps}
+                open={handleOpenFileDialog}
+                className="rounded-lg border-0"
+              >
                 <DropzoneEmptyState />
                 <DropzoneContent />
               </Dropzone>
-
-              {/* Custom PDF Preview */}
               {isPdf && files.length > 0 && <PdfPreview file={files[0]} />}
             </div>
           </div>
 
           {files.length > 0 && (
             <>
-              <Separator className="my-4" />
-
-              {/* File metadata form */}
-              <DocumentMetadataForm
-                title={title}
-                setTitle={setTitle}
-                description={description}
-                setDescription={setDescription}
-                selectedCategories={selectedCategories}
-                setSelectedCategories={setSelectedCategories}
-                onError={(errorMsg) => toast.error(errorMsg)}
-                disabled={loading || uploading}
-                isLoadingCategories={isLoadingCategories}
-              />
+              <Separator className="my-6" />
+              <div>
+                <CardTitle className="mb-2 text-lg sm:text-xl">
+                  2. Add Details
+                </CardTitle>
+                <CardDescription className="mb-4 text-sm">
+                  Provide information about your document.
+                </CardDescription>
+                <DocumentMetadataForm
+                  title={title}
+                  setTitle={setTitle}
+                  description={description}
+                  setDescription={setDescription}
+                  selectedCategories={selectedCategories}
+                  setSelectedCategories={setSelectedCategories}
+                  onError={(errorMsg) => toast.error(errorMsg)}
+                  disabled={isProcessing}
+                  isLoadingCategories={isLoadingCategories}
+                />
+              </div>
             </>
           )}
         </CardContent>
@@ -395,7 +440,7 @@ export function FileUpload({
           <Button
             variant="outline"
             onClick={() => router.back()}
-            disabled={loading || uploading}
+            disabled={isProcessing}
             className="w-full sm:w-auto"
           >
             Cancel
@@ -403,15 +448,19 @@ export function FileUpload({
           <Button
             onClick={handleUpload}
             disabled={
+              !userId ||
               files.length === 0 ||
-              loading ||
-              uploading ||
+              isProcessing ||
               !title ||
               selectedCategories.length === 0
             }
             className="w-full sm:w-auto"
           >
-            {loading || uploading ? "Uploading..." : "Upload Document"}
+            {uploading
+              ? "Uploading..."
+              : isLoadingHookState
+                ? "Processing..."
+                : "Upload Document"}
           </Button>
         </CardFooter>
       </Card>

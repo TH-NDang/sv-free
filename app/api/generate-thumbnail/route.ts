@@ -1,17 +1,19 @@
 import { auth } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import filepreview from "filepreview";
-import fs from "fs";
+import fsPromises from "fs/promises";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import os from "os";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
 
 /**
  * Document: https://www.npmjs.com/package/filepreview?activeTab=readme
  */
 
 export async function POST(req: Request) {
+  const supabase = await createClient();
+
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -20,28 +22,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { fileUrl, fileName } = await req.json();
+    const { storagePath, thumbnailStoragePath, originalFilename } =
+      await req.json();
 
-    // Tạo thư mục tạm nếu chưa tồn tại
-    const tmpDir = path.join(process.cwd(), "tmp");
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir);
+    if (!storagePath || !thumbnailStoragePath || !originalFilename) {
+      return NextResponse.json(
+        {
+          error:
+            "Missing storagePath, thumbnailStoragePath, or originalFilename",
+        },
+        { status: 400 }
+      );
     }
 
-    // Tạo tên file tạm và đường dẫn cho thumbnail
-    const tempFilePath = path.join(tmpDir, fileName);
-    const thumbnailPath = path.join(
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from("documents")
+      .download(storagePath);
+
+    if (downloadError || !fileData) {
+      console.error(
+        "Error downloading original file from Supabase:",
+        downloadError
+      );
+      throw new Error("Could not download original file from storage.");
+    }
+
+    const tmpDir = os.tmpdir();
+
+    const tempInputPath = path.join(tmpDir, `input-${originalFilename}`);
+    const tempOutputPath = path.join(
       tmpDir,
-      `thumb-${path.parse(fileName).name}.jpg`
+      `thumb-${path.parse(originalFilename).name}.jpg`
     );
 
-    // Tải file về từ Supabase để xử lý
-    const response = await fetch(fileUrl);
-    const blob = await response.blob();
-    const buffer = Buffer.from(await blob.arrayBuffer());
-    fs.writeFileSync(tempFilePath, buffer);
+    await fsPromises.writeFile(
+      tempInputPath,
+      Buffer.from(await fileData.arrayBuffer())
+    );
 
-    // Tạo thumbnail với filepreview
     const options = {
       width: 800,
       height: 600,
@@ -52,11 +70,12 @@ export async function POST(req: Request) {
 
     await new Promise<void>((resolve, reject) => {
       filepreview.generate(
-        tempFilePath,
-        thumbnailPath,
+        tempInputPath,
+        tempOutputPath,
         options,
         (error: Error | null) => {
           if (error) {
+            console.error("filepreview generation error:", error);
             reject(error);
             return;
           }
@@ -65,34 +84,35 @@ export async function POST(req: Request) {
       );
     });
 
-    const supabase = await createClient();
-    const thumbnailFile = fs.readFileSync(thumbnailPath);
-    const uploadPath = `thumbnails/${uuidv4()}.jpg`;
+    const thumbnailFileBuffer = await fsPromises.readFile(tempOutputPath);
 
-    const { error } = await supabase.storage
-      .from("documents")
-      .upload(uploadPath, thumbnailFile, {
+    const { error: uploadError } = await supabase.storage
+      .from("thumbnails")
+      .upload(thumbnailStoragePath, thumbnailFileBuffer, {
         contentType: "image/jpeg",
         upsert: true,
       });
 
-    if (error) {
-      throw new Error(`Failed to upload thumbnail: ${error.message}`);
+    await fsPromises
+      .unlink(tempInputPath)
+      .catch((err) => console.error("Error deleting temp input file:", err));
+    await fsPromises
+      .unlink(tempOutputPath)
+      .catch((err) => console.error("Error deleting temp output file:", err));
+
+    if (uploadError) {
+      console.error("Error uploading thumbnail to Supabase:", uploadError);
+      throw new Error(`Failed to upload thumbnail: ${uploadError.message}`);
     }
 
-    const { data: urlData } = supabase.storage
-      .from("documents")
-      .getPublicUrl(uploadPath);
-
-    // Xóa các file tạm
-    fs.unlinkSync(tempFilePath);
-    fs.unlinkSync(thumbnailPath);
-
-    return NextResponse.json({ thumbnailUrl: urlData.publicUrl });
+    return NextResponse.json({ thumbnailStoragePath });
   } catch (error) {
-    console.error("Error generating thumbnail:", error);
+    console.error("Error in POST /api/generate-thumbnail:", error);
     return NextResponse.json(
-      { error: "Failed to generate thumbnail" },
+      {
+        error: "Failed to generate thumbnail",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

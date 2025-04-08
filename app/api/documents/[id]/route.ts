@@ -1,4 +1,5 @@
 import { getDocumentById } from "@/lib/db/queries";
+import { getPublicUrl } from "@/lib/supabase/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -6,11 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Đảm bảo params là đối tượng và có thuộc tính id
     const documentId = (await params).id;
     if (!documentId) {
       return NextResponse.json(
-        { error: "ID tài liệu không hợp lệ" },
+        { error: "Invalid document ID" },
         { status: 400 }
       );
     }
@@ -19,18 +19,30 @@ export async function GET(
 
     if (!document) {
       return NextResponse.json(
-        { error: "Không tìm thấy tài liệu" },
+        { error: "Document not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(document);
+    // Construct full URLs before returning the response
+    const responseData = await Promise.all([
+      {
+        ...document,
+        fileUrl: await getPublicUrl(document.storagePath, "documents"),
+        thumbnailUrl: await getPublicUrl(
+          document.thumbnailStoragePath,
+          "thumbnails"
+        ),
+      },
+    ]);
+
+    return NextResponse.json(responseData);
   } catch (error) {
-    console.error("Lỗi khi lấy chi tiết tài liệu:", error);
+    console.error("Error fetching document details:", error);
     const errorMessage =
-      error instanceof Error ? error.message : "Lỗi không xác định";
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Không thể lấy chi tiết tài liệu", message: errorMessage },
+      { error: "Cannot fetch document details", message: errorMessage },
       { status: 500 }
     );
   }

@@ -33,23 +33,16 @@ export function truncate(text: string, length: number): string {
   return text.slice(0, length) + "...";
 }
 
-export function formatFileSize(bytes: number | string): string {
-  if (!bytes) return "0 B";
-
-  const bytesNum = typeof bytes === "string" ? parseInt(bytes, 10) : bytes;
-
-  if (isNaN(bytesNum)) return "0 B";
-
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let i = 0;
-  let size = bytesNum;
-
-  while (size >= 1024 && i < units.length - 1) {
-    size /= 1024;
-    i++;
-  }
-
-  return `${size.toFixed(1)} ${units[i]}`;
+export function formatFileSize(
+  bytes: number | bigint | string | null | undefined
+): string {
+  if (bytes === null || bytes === undefined || bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const numBytes =
+    typeof bytes === "string" ? parseFloat(bytes) : Number(bytes);
+  const i = Math.floor(Math.log(numBytes) / Math.log(k));
+  return parseFloat((numBytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 export function generateSlug(text: string): string {

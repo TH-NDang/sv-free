@@ -1,25 +1,10 @@
 import { db } from "@/lib/db";
-import { categories, documents } from "@/lib/db/schema";
-import { desc, eq, like, SQL } from "drizzle-orm";
+import { categories, documents, NewDocument, user } from "@/lib/db/schema";
+import { and, desc, eq, like, SQL } from "drizzle-orm";
 
 // ==========================================
 // Document Types
 // ==========================================
-
-/**
- * Type for document creation
- */
-export interface CreateDocumentData {
-  title: string;
-  description?: string | null;
-  fileUrl: string;
-  fileType?: string | null;
-  fileSize?: string | null;
-  categoryId?: string | null;
-  authorId?: string | null;
-  thumbnailUrl?: string | null;
-  published?: boolean;
-}
 
 /**
  * Type for document query parameters
@@ -29,6 +14,11 @@ export type DocumentQueryParams = {
   authorId?: string;
   limit?: number;
   offset?: number;
+};
+
+export type DocumentWithDetails = typeof documents.$inferSelect & {
+  category: typeof categories.$inferSelect | null;
+  author: Pick<typeof user.$inferSelect, "id" | "name" | "image"> | null;
 };
 
 // ==========================================
@@ -69,22 +59,9 @@ export interface CategoryQueryParams {
 /**
  * Create a new document
  */
-export async function createDocument(data: CreateDocumentData) {
+export async function createDocument(data: NewDocument) {
   try {
-    const documentData = {
-      title: data.title,
-      description: data.description || null,
-      fileUrl: data.fileUrl,
-      fileType: data.fileType || null,
-      fileSize: data.fileSize || null,
-      categoryId: data.categoryId || null,
-      authorId: data.authorId || null,
-      thumbnailUrl: data.thumbnailUrl || null,
-      published: data.published !== undefined ? data.published : true,
-      downloadCount: "0",
-    };
-
-    const result = await db.insert(documents).values(documentData).returning();
+    const result = await db.insert(documents).values(data).returning();
 
     if (!result || result.length === 0) {
       throw new Error("Document không được tạo");
@@ -100,17 +77,17 @@ export async function createDocument(data: CreateDocumentData) {
 }
 
 /**
- * Get documents with basic filtering
+ * Get documents with basic filtering, including author details
  */
 export async function getDocuments({
   categoryId,
   authorId,
   limit = 10,
   offset = 0,
-}: DocumentQueryParams = {}) {
+}: DocumentQueryParams = {}): Promise<DocumentWithDetails[]> {
   try {
-    // Build conditions for SQL
-    const conditions: SQL[] = [];
+    // Build conditions for SQL using 'and'
+    const conditions: (SQL | undefined)[] = [];
 
     if (categoryId) {
       conditions.push(eq(documents.categoryId, categoryId));
@@ -120,54 +97,45 @@ export async function getDocuments({
       conditions.push(eq(documents.authorId, authorId));
     }
 
-    // Execute query with or without conditions
-    let results;
+    const whereCondition =
+      conditions.length > 0 ? and(...conditions) : undefined;
 
-    if (conditions.length === 0) {
-      // No conditions
-      results = await db
-        .select({
-          document: documents,
-          category: categories,
-        })
-        .from(documents)
-        .leftJoin(categories, eq(documents.categoryId, categories.id))
-        .orderBy(desc(documents.createdAt))
-        .limit(limit)
-        .offset(offset);
-    } else if (conditions.length === 1) {
-      // One condition
-      results = await db
-        .select({
-          document: documents,
-          category: categories,
-        })
-        .from(documents)
-        .where(conditions[0])
-        .leftJoin(categories, eq(documents.categoryId, categories.id))
-        .orderBy(desc(documents.createdAt))
-        .limit(limit)
-        .offset(offset);
-    } else {
-      // Multiple conditions - this would need to be handled differently
-      // For simplicity, we'll use the first condition as a temporary solution
-      results = await db
-        .select({
-          document: documents,
-          category: categories,
-        })
-        .from(documents)
-        .where(conditions[0])
-        .leftJoin(categories, eq(documents.categoryId, categories.id))
-        .orderBy(desc(documents.createdAt))
-        .limit(limit)
-        .offset(offset);
-    }
+    const results = await db
+      .select({
+        // Select all fields from documents
+        id: documents.id,
+        title: documents.title,
+        description: documents.description,
+        originalFilename: documents.originalFilename,
+        storagePath: documents.storagePath,
+        fileType: documents.fileType,
+        fileSize: documents.fileSize,
+        thumbnailStoragePath: documents.thumbnailStoragePath,
+        published: documents.published,
+        downloadCount: documents.downloadCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        categoryId: documents.categoryId,
+        authorId: documents.authorId,
+        // Select category details
+        category: categories,
+        // Select specific author details
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
+      })
+      .from(documents)
+      .leftJoin(categories, eq(documents.categoryId, categories.id))
+      .leftJoin(user, eq(documents.authorId, user.id)) // Join with user table
+      .where(whereCondition) // Apply combined conditions
+      .orderBy(desc(documents.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return results.map(({ document, category }) => ({
-      ...document,
-      category,
-    }));
+    // No need to map here, the select statement constructs the desired shape
+    return results;
   } catch (error) {
     console.error("Error fetching documents:", error);
     throw new Error("Không thể lấy danh sách tài liệu");
@@ -191,28 +159,49 @@ export async function getUserDocuments(userId: string, limit = 50, offset = 0) {
 }
 
 /**
- * Get a single document by ID
+ * Get a single document by ID, including author details
  */
-export async function getDocumentById(id: string) {
+export async function getDocumentById(
+  id: string
+): Promise<DocumentWithDetails | null> {
   try {
     const result = await db
       .select({
-        document: documents,
+        // Select all fields from documents
+        id: documents.id,
+        title: documents.title,
+        description: documents.description,
+        originalFilename: documents.originalFilename,
+        storagePath: documents.storagePath,
+        fileType: documents.fileType,
+        fileSize: documents.fileSize,
+        thumbnailStoragePath: documents.thumbnailStoragePath,
+        published: documents.published,
+        downloadCount: documents.downloadCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        categoryId: documents.categoryId,
+        authorId: documents.authorId,
+        // Select category details
         category: categories,
+        // Select specific author details
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
       })
       .from(documents)
       .where(eq(documents.id, id))
       .leftJoin(categories, eq(documents.categoryId, categories.id))
+      .leftJoin(user, eq(documents.authorId, user.id))
       .limit(1);
 
     if (result.length === 0) {
       return null;
     }
 
-    return {
-      ...result[0].document,
-      category: result[0].category,
-    };
+    return result[0];
   } catch (error) {
     console.error(`Error fetching document with ID ${id}:`, error);
     throw new Error("Không thể lấy thông tin tài liệu");

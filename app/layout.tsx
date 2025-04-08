@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { META_THEME_COLORS, siteConfig } from "@/config/site";
 import { fontVariables } from "@/lib/fonts";
 import "@/styles/globals.css";
+import Script from "next/script";
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
@@ -117,6 +118,10 @@ export default async function RootLayout({
               },
             }),
           }}
+        />
+        <Script
+          crossOrigin="anonymous"
+          src="//unpkg.com/react-scan/dist/auto.global.js"
         />
       </head>
       <body

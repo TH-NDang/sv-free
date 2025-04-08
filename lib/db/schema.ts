@@ -1,4 +1,6 @@
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   pgTable,
   text,
@@ -7,6 +9,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { z } from "zod";
 
 // ==========================================
 // Auth Schema
@@ -29,6 +32,8 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
 });
+
+export type User = InferSelectModel<typeof user>;
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
@@ -84,20 +89,46 @@ export const categories = pgTable("categories", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export type Category = InferSelectModel<typeof categories>;
+export type NewCategory = InferInsertModel<typeof categories>;
+
 export const documents = pgTable("documents", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  fileUrl: text("file_url").notNull(),
-  fileType: varchar("file_type", { length: 50 }),
-  fileSize: text("file_size"),
+  originalFilename: text("original_filename").notNull(),
+  storagePath: text("storage_path").notNull().unique(),
+  fileType: varchar("file_type", { length: 100 }),
+  fileSize: bigint("file_size", { mode: "number" }),
+  thumbnailStoragePath: text("thumbnail_storage_path").unique(),
   categoryId: uuid("category_id").references(() => categories.id),
   authorId: text("author_id").references(() => user.id),
-  thumbnailUrl: text("thumbnail_url"),
   published: boolean("published").default(true).notNull(),
-  downloadCount: text("download_count").default("0"),
+  downloadCount: bigint("download_count", { mode: "number" }).default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Document = InferSelectModel<typeof documents>;
+export type NewDocument = InferInsertModel<typeof documents>;
+
+export const documentSchema = z.object({
+  title: z
+    .string()
+    .min(3, "Tiêu đề phải có ít nhất 3 ký tự")
+    .max(255, "Tiêu đề không được vượt quá 255 ký tự"),
+  description: z.string().optional().nullable(),
+  originalFilename: z.string().min(1, "Tên file gốc không được để trống"),
+  storagePath: z.string().min(1, "Đường dẫn lưu trữ không được để trống"),
+  thumbnailStoragePath: z.string().optional().nullable(),
+  fileType: z.string().optional().nullable(),
+  fileSize: z
+    .number()
+    .positive("Kích thước file phải là số dương")
+    .optional()
+    .nullable(),
+  categoryId: z.string().uuid("ID danh mục không hợp lệ").optional().nullable(),
+  published: z.boolean().optional().default(true),
 });
 
 export const tags = pgTable("tags", {

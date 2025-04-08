@@ -21,12 +21,22 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "svfree.wfip.tech",
+        hostname: "svfree.services.wfip.tech",
+      },
+      {
+        protocol: "https",
+        hostname: "supabasekong-fgcg4kwc44g8k4kskw8k088o.services.wfip.tech",
       },
     ],
   },
   experimental: {
     ppr: "incremental",
+    // use by pdf-viewer.tsx
+    turbo: {
+      resolveAlias: {
+        canvas: "./empty-module.ts",
+      },
+    },
   },
 };
 

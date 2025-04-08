@@ -6,6 +6,9 @@ declare module "filepreview" {
       width?: number;
       height?: number;
       quality?: number;
+      density?: number;
+      background?: string;
+      pagerange?: string;
     },
     callback: (error: Error | null) => void
   ): void;

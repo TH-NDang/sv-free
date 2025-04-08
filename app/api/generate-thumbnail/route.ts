@@ -60,13 +60,29 @@ export async function POST(req: Request) {
       Buffer.from(await fileData.arrayBuffer())
     );
 
-    const options = {
+    const options: {
+      width: number;
+      height: number;
+      quality: number;
+      density?: number;
+      background: string;
+      pagerange?: string;
+    } = {
       width: 800,
       height: 600,
       quality: 100,
       density: 300,
       background: "#FFFFFF",
+      pagerange: "1-3",
     };
+
+    // Remove density for non-PDF files as it might cause issues
+    const fileExtension = path.extname(originalFilename).toLowerCase();
+    if (fileExtension !== ".pdf") {
+      delete options.density;
+      // Also remove pagerange for non-PDFs as it seems to cause issues with filepreview's convert command
+      delete options.pagerange;
+    }
 
     await new Promise<void>((resolve, reject) => {
       filepreview.generate(
@@ -75,7 +91,11 @@ export async function POST(req: Request) {
         options,
         (error: Error | null) => {
           if (error) {
-            console.error("filepreview generation error:", error);
+            console.error(
+              `filepreview generation error for ${tempInputPath} -> ${tempOutputPath}:`,
+              error,
+              error instanceof Error ? error.stack : "No stack trace"
+            );
             reject(error);
             return;
           }
@@ -96,9 +116,13 @@ export async function POST(req: Request) {
     await fsPromises
       .unlink(tempInputPath)
       .catch((err) => console.error("Error deleting temp input file:", err));
-    await fsPromises
-      .unlink(tempOutputPath)
-      .catch((err) => console.error("Error deleting temp output file:", err));
+    await fsPromises.unlink(tempOutputPath).catch((err) => {
+      // Keep the output file for debugging if deletion fails, or comment out deletion
+      console.warn(
+        `Could not delete temp output file ${tempOutputPath}, leaving for inspection:`,
+        err
+      );
+    });
 
     if (uploadError) {
       console.error("Error uploading thumbnail to Supabase:", uploadError);

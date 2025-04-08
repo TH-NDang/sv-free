@@ -1,5 +1,5 @@
-import { Document } from "@/app/(main)/types/document";
 import { Button } from "@/components/ui/button";
+import { Document } from "@/lib/db/schema";
 import { BookOpenIcon, ClockIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -34,7 +34,7 @@ export function DocumentListRecent({ documents }: { documents: Document[] }) {
                 {doc.title}
               </h3>
               <p className="text-muted-foreground text-sm">
-                {doc.category} • {doc.fileType}
+                {doc.categoryId} • {doc.fileType}
               </p>
             </div>
           </Link>

@@ -1,4 +1,4 @@
-import { Document } from "@/app/(main)/types/document";
+import { Document } from "@/lib/db/schema";
 import { FolderIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -21,7 +21,7 @@ export function CategoryGrid({ categories, documents }: CategoryGridProps) {
             <FolderIcon className="text-primary mb-2 h-8 w-8" />
             <h3 className="font-medium">{category}</h3>
             <p className="text-muted-foreground text-sm">
-              {documents.filter((d) => d.category === category).length}{" "}
+              {documents.filter((d) => d.categoryId === category).length}{" "}
               documents
             </p>
           </Link>

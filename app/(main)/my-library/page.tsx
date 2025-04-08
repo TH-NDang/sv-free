@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 import { DocumentWithDetails } from "@/lib/db/queries";
@@ -47,10 +48,24 @@ const fetchUserDocuments = async (): Promise<FetchedUserDocument[]> => {
 // --- Sub-Components --- //
 
 interface ProfileHeaderProps {
-  user: User;
+  user: User | null;
+  isLoading: boolean;
 }
 
-function ProfileHeader({ user }: ProfileHeaderProps) {
+function ProfileHeader({ user, isLoading }: ProfileHeaderProps) {
+  if (isLoading) {
+    return (
+      <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+        <Skeleton className="h-20 w-20 rounded-full sm:h-24 sm:w-24" />
+        <div className="flex flex-1 flex-col items-center text-center sm:items-start sm:text-left">
+          <Skeleton className="mb-2 h-7 w-48 sm:h-8" />
+          <Skeleton className="mb-3 h-5 w-64 sm:mb-4" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
       <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
@@ -75,7 +90,7 @@ function ProfileHeader({ user }: ProfileHeaderProps) {
 
         <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
           <Link href="/settings">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={!user}>
               Edit Profile
             </Button>
           </Link>
@@ -91,9 +106,20 @@ interface ProfileStatsProps {
     downloads: number;
     savedDocuments: number;
   };
+  isLoading: boolean;
 }
 
-function ProfileStats({ stats }: ProfileStatsProps) {
+function ProfileStats({ stats, isLoading }: ProfileStatsProps) {
+  if (isLoading) {
+    return (
+      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+        <Skeleton className="h-[98px] w-full rounded-lg" />
+        <Skeleton className="h-[98px] w-full rounded-lg" />
+        <Skeleton className="h-[98px] w-full rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
       <Card>
@@ -295,29 +321,26 @@ export default function ProfilePage() {
     savedDocuments: savedDocumentsPlaceholder.length,
   };
 
-  // Loading state for the page shell (session loading)
-  if (isLoadingSession) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Loading profile...</p>
-      </div>
-    );
-  }
-
   // Could add a state if session load failed or no user
-  if (!user) {
+  if (!user && !isLoadingSession) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Please log in to view your library.</p>
-        {/* Optionally add a login button */}
+      <div className="container mx-auto flex h-[calc(100vh-200px)] items-center justify-center p-4 md:p-6">
+        <div className="text-center">
+          <p className="text-lg font-medium">Please log in</p>
+          <p className="text-muted-foreground mb-4">
+            You need to be logged in to view your library.
+          </p>
+          {/* Optionally add a login button/link here */}
+          {/* Example: <Link href="/login"><Button>Log In</Button></Link> */}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto max-w-5xl p-4 md:p-6">
-      <ProfileHeader user={user} />
-      <ProfileStats stats={userStats} />
+      <ProfileHeader user={user} isLoading={isLoadingSession} />
+      <ProfileStats stats={userStats} isLoading={isLoadingSession} />
 
       <Tabs
         defaultValue="uploads"

@@ -1,9 +1,27 @@
 import { DownloadIcon, EyeIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Document } from "../documents/[id]/page";
+import { Document, User } from "@/lib/db/schema";
 
-export function DocumentsGrid({ documents }: { documents: Document[] }) {
+type DocumentWithOptionalAuthor = Pick<
+  Document,
+  | "id"
+  | "title"
+  | "description"
+  | "fileUrl"
+  | "fileType"
+  | "fileSize"
+  | "createdAt"
+  | "thumbnailUrl"
+  | "published"
+  | "downloadCount"
+> & { author?: User };
+
+export function DocumentsGrid({
+  documents,
+}: {
+  documents: DocumentWithOptionalAuthor[];
+}) {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {documents.map((doc) => (
@@ -40,7 +58,7 @@ export function DocumentsGrid({ documents }: { documents: Document[] }) {
               {doc.title}
             </Link>
             <div className="text-muted-foreground mt-1 text-sm">
-              {doc.author} •{" "}
+              {doc.author?.name} •{" "}
               {new Date(doc.createdAt).toLocaleDateString("en-US", {
                 month: "numeric",
                 day: "numeric",

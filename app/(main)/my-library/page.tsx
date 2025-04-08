@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookmarkIcon, FileUpIcon, PlusIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Document } from "../documents/[id]/page";
+import { Document } from "@/lib/db/schema";
 
 const fetchUserDocuments = async () => {
   const response = await fetch("/api/documents?myUploads=true");

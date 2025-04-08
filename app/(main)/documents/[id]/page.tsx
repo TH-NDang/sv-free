@@ -20,29 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-
-export interface Document {
-  id: string;
-  title: string;
-  description: string | null;
-  fileUrl: string;
-  fileType: string | null;
-  fileSize: string | null;
-  categoryId: string | null;
-  authorId: string | null;
-  thumbnailUrl: string | null;
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-  downloadCount: string;
-  author?: string;
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-  } | null;
-}
+import { Document } from "@/lib/db/schema";
 
 const fetchDocument = async (id: string): Promise<Document> => {
   const response = await fetch(`/api/documents/${id}`);
@@ -120,7 +98,7 @@ export default function DocumentDetailPage() {
           <div>
             <h1 className="text-2xl font-bold">{document.title}</h1>
             <p className="text-muted-foreground">
-              {document.category?.name || "Chưa phân loại"}
+              {document.categoryId || "Chưa phân loại"}
             </p>
           </div>
         </div>
@@ -182,7 +160,7 @@ export default function DocumentDetailPage() {
                   <UserIcon className="text-muted-foreground h-4 w-4" />
                   <span className="text-muted-foreground">Tác giả:</span>
                   <span className="ml-auto">
-                    {document.author || "Không xác định"}
+                    {document.authorId || "Không xác định"}
                   </span>
                 </div>
 

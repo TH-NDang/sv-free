@@ -1,27 +1,8 @@
 import { auth } from "@/lib/auth";
 import { createDocument, getDocuments } from "@/lib/db/queries";
+import { documentSchema } from "@/lib/db/schema";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-
-const documentSchema = z.object({
-  title: z
-    .string()
-    .min(3, "Tiêu đề phải có ít nhất 3 ký tự")
-    .max(255, "Tiêu đề không được vượt quá 255 ký tự"),
-  description: z.string().optional().nullable(),
-  fileUrl: z.string().url("URL file không hợp lệ"),
-  fileType: z.string().optional().nullable(),
-  fileSize: z.string().optional().nullable(),
-  categoryId: z.string().optional().nullable(),
-  authorId: z.string().optional().nullable(),
-  thumbnailUrl: z
-    .string()
-    .url("URL thumbnail không hợp lệ")
-    .optional()
-    .nullable(),
-  published: z.boolean().optional().default(true),
-});
 
 export async function POST(request: NextRequest) {
   try {

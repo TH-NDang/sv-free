@@ -275,25 +275,21 @@ export function FileUpload({
         thumbnailUrl = thumbnailData.thumbnailUrl;
       }
 
-      // Document data to save to the database
-      const documentData = {
-        title,
-        description: description || undefined,
-        fileUrl,
-        fileType: file.type,
-        fileSize: `${Math.round(file.size / 1024)} KB`,
-        categoryId: selectedCategories[0].value,
-        published: true,
-        thumbnailUrl,
-      };
-
       // Save document to database
       const response = await fetch("/api/documents", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(documentData),
+        body: JSON.stringify({
+          title,
+          description: description || undefined,
+          fileUrl,
+          fileType: file.type,
+          fileSize: `${Math.round(file.size / 1024)} KB`,
+          categoryId: selectedCategories[0].value,
+          thumbnailUrl,
+        }),
       });
 
       if (!response.ok) {

@@ -1,25 +1,10 @@
 import { db } from "@/lib/db";
-import { categories, documents } from "@/lib/db/schema";
+import { categories, documents, NewDocument } from "@/lib/db/schema";
 import { desc, eq, like, SQL } from "drizzle-orm";
 
 // ==========================================
 // Document Types
 // ==========================================
-
-/**
- * Type for document creation
- */
-export interface CreateDocumentData {
-  title: string;
-  description?: string | null;
-  fileUrl: string;
-  fileType?: string | null;
-  fileSize?: string | null;
-  categoryId?: string | null;
-  authorId?: string | null;
-  thumbnailUrl?: string | null;
-  published?: boolean;
-}
 
 /**
  * Type for document query parameters
@@ -69,22 +54,9 @@ export interface CategoryQueryParams {
 /**
  * Create a new document
  */
-export async function createDocument(data: CreateDocumentData) {
+export async function createDocument(data: NewDocument) {
   try {
-    const documentData = {
-      title: data.title,
-      description: data.description || null,
-      fileUrl: data.fileUrl,
-      fileType: data.fileType || null,
-      fileSize: data.fileSize || null,
-      categoryId: data.categoryId || null,
-      authorId: data.authorId || null,
-      thumbnailUrl: data.thumbnailUrl || null,
-      published: data.published !== undefined ? data.published : true,
-      downloadCount: "0",
-    };
-
-    const result = await db.insert(documents).values(documentData).returning();
+    const result = await db.insert(documents).values(data).returning();
 
     if (!result || result.length === 0) {
       throw new Error("Document không được tạo");

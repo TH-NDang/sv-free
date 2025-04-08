@@ -30,8 +30,19 @@ import { Separator } from "@/components/ui/separator";
 import { useCategorySearch } from "@/hooks/use-category-search";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { type Document } from "@/lib/db/schema";
-import { getMimeType } from "@/lib/utils";
 import { PdfPreview } from "./pdf-preview";
+
+const mimeTypeMap: { [key: string]: string } = {
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  txt: "text/plain",
+  zip: "application/zip",
+};
 
 /**
  * Document Metadata Form Component
@@ -184,12 +195,19 @@ export function FileUpload({
 
   const { isLoading: isLoadingCategories } = useCategorySearch();
 
-  const allowedMimeTypes = acceptedFileTypes.split(",").map((type) => {
-    if (type.startsWith(".")) {
-      return getMimeType(type.substring(1));
-    }
-    return type;
-  });
+  const allowedMimeTypes = acceptedFileTypes
+    .split(",")
+    .map((type) => type.trim())
+    .map((type) => {
+      if (type.startsWith(".")) {
+        const extension = type.substring(1);
+        // Use explicit map first. Fallback could be added if needed.
+        return mimeTypeMap[extension];
+      }
+      // If it's already a MIME type, return it directly
+      return type;
+    })
+    .filter((mime): mime is string => !!mime); // Filter out null/undefined results
 
   const [title, setTitle] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Option[]>([]);

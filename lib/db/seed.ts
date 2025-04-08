@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { v4 as uuidv4 } from "uuid";
 import { categories } from "./schema";
+import { createClient } from "@supabase/supabase-js";
 
 // ==========================================
 // Thiết lập kết nối database riêng cho seed
@@ -112,11 +113,67 @@ export async function seedCategories() {
   }
 }
 
+/**
+ * Kiểm tra và tạo buckets trên Supabase Storage nếu chưa tồn tại
+ */
+export async function seedBucketSupabase() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  console.log("🌱 Setting up Supabase storage buckets...");
+
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+
+    if (error) {
+      throw new Error(`Error listing buckets: ${error.message}`);
+    }
+
+    const requiredBuckets = ["documents", "thumbnails"];
+    const existingBucketNames = buckets?.map((bucket) => bucket.name) || [];
+
+    // Kiểm tra những bucket nào chưa tồn tại và cần tạo
+    const bucketsToCreate = requiredBuckets.filter(
+      (bucketName) => !existingBucketNames.includes(bucketName)
+    );
+
+    if (bucketsToCreate.length === 0) {
+      console.log("✅ All required storage buckets already exist");
+      return;
+    }
+
+    // Tạo các bucket còn thiếu
+    for (const bucketName of bucketsToCreate) {
+      console.log(`Creating bucket: ${bucketName}`);
+      const { error: createError } = await supabase.storage.createBucket(
+        bucketName,
+        {
+          public: true,
+        }
+      );
+
+      if (createError) {
+        throw new Error(
+          `Error creating bucket ${bucketName}: ${createError.message}`
+        );
+      }
+    }
+
+    console.log(`✅ Successfully created ${bucketsToCreate.length} buckets`);
+  } catch (error) {
+    console.error("❌ Error setting up Supabase buckets:", error);
+    throw error;
+  }
+}
+
 async function main() {
   try {
     console.log("🔍 Kiểm tra kết nối database...");
 
     await seedCategories();
+    await seedBucketSupabase();
+
     console.log("🎉 Seed completed successfully!");
   } catch (error) {
     console.error("❌ Seed failed:", error);

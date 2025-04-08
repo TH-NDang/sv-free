@@ -34,14 +34,39 @@ export function DocumentViewer({
 
   const getFileExtension = () => {
     // Kiểm tra fileType trước
+    const lowerFileType = fileType?.toLowerCase();
+
     if (fileType) {
-      // Xử lý trường hợp application/pdf và các MIME type khác
-      if (fileType.toLowerCase() === "application/pdf") return "pdf";
-      if (fileType.toLowerCase().includes("/")) {
-        // Nếu là MIME type (có dấu "/"), lấy phần sau dấu "/"
-        return fileType.toLowerCase().split("/").pop() || "";
+      // Ưu tiên xử lý MIME types đã biết
+      if (lowerFileType === "application/pdf") return "pdf";
+      if (
+        lowerFileType ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      )
+        return "docx";
+      if (lowerFileType === "application/msword") return "doc";
+      if (
+        lowerFileType ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+        return "xlsx";
+      if (lowerFileType === "application/vnd.ms-excel") return "xls";
+      if (
+        lowerFileType ===
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+      )
+        return "pptx";
+      if (lowerFileType === "application/vnd.ms-powerpoint") return "ppt";
+      if (lowerFileType === "text/plain") return "txt";
+
+      // Fallback cho các MIME type khác
+      if (lowerFileType?.includes("/")) {
+        // Cố gắng lấy phần cuối sau dấu '/' làm extension
+        // (có thể không chính xác cho mọi trường hợp)
+        return lowerFileType.split("/").pop() || "";
       }
-      return fileType.toLowerCase();
+      // Nếu không phải dạng MIME type chuẩn, trả về giá trị gốc
+      return lowerFileType;
     }
 
     // Nếu không có fileType, lấy từ URL
@@ -49,7 +74,7 @@ export function DocumentViewer({
     return extension || "";
   };
 
-  const extension = getFileExtension();
+  const extension = getFileExtension() || "";
 
   const isValidUrl = (url: string) => {
     try {

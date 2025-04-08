@@ -1,8 +1,8 @@
 import { DocumentWithDetails } from "@/lib/db/queries";
+import { formatFileSize, getDisplayExtension } from "@/lib/utils";
 import { DownloadIcon, EyeIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatFileSize } from "@/lib/utils";
 
 interface DocumentsGridProps {
   documents: (DocumentWithDetails & {
@@ -40,7 +40,7 @@ export function DocumentsGrid({ documents }: DocumentsGridProps) {
             <div className="absolute right-2 top-2 flex items-center gap-1">
               {doc.fileType && (
                 <div className="rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white">
-                  {doc.fileType.split("/").pop()?.toUpperCase() || doc.fileType}
+                  {getDisplayExtension(doc.fileType)}
                 </div>
               )}
               {doc.fileSize !== null && doc.fileSize !== undefined && (

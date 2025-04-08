@@ -111,3 +111,36 @@ export function normalizeFilePath(path: string): string {
   const normalizedFilename = normalizedName + extension;
   return [...parts, normalizedFilename].join("/");
 }
+
+export const mimeTypeToExtensionMap: { [key: string]: string } = {
+  "application/pdf": "PDF",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "DOCX",
+  "application/msword": "DOC",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+  "application/vnd.ms-excel": "XLS",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    "PPTX",
+  "application/vnd.ms-powerpoint": "PPT",
+  "text/plain": "TXT",
+  "image/jpeg": "JPG",
+  "image/png": "PNG",
+  "image/gif": "GIF",
+  "image/webp": "WEBP",
+  "application/zip": "ZIP",
+  // Add more mappings as needed
+};
+
+export const getDisplayExtension = (fileType: string | null): string => {
+  if (!fileType) return "Không xác định"; // Or "Unknown" depending on language preference
+  const lowerFileType = fileType.toLowerCase();
+  if (mimeTypeToExtensionMap[lowerFileType]) {
+    return mimeTypeToExtensionMap[lowerFileType];
+  }
+  if (lowerFileType.includes("/")) {
+    // Attempt to get the part after the slash as a fallback
+    return lowerFileType.split("/").pop()?.toUpperCase() || lowerFileType;
+  }
+  // If it's not a standard MIME type, return the original string, uppercased
+  return fileType.toUpperCase();
+};

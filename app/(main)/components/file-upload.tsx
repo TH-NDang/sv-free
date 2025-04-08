@@ -247,20 +247,6 @@ export function FileUpload({
         description: "Please wait while we upload your document.",
       });
 
-      // Check if bucket exists and create it if it doesn't
-      const { error: bucketError } =
-        await supabase.storage.getBucket(bucketName);
-      if (bucketError) {
-        const { error } = await supabase.storage.createBucket(bucketName, {
-          public: true,
-        });
-
-        if (error) {
-          toast.error(`Failed to create storage bucket: ${error.message}`);
-          throw new Error(error.message);
-        }
-      }
-
       await supabaseUpload();
 
       // Get the original file and its normalized name

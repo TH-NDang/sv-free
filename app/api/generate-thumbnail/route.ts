@@ -65,7 +65,6 @@ export async function POST(req: Request) {
       );
     });
 
-    // Upload thumbnail lên Supabase
     const supabase = await createClient();
     const thumbnailFile = fs.readFileSync(thumbnailPath);
     const uploadPath = `thumbnails/${uuidv4()}.jpg`;
@@ -81,7 +80,6 @@ export async function POST(req: Request) {
       throw new Error(`Failed to upload thumbnail: ${error.message}`);
     }
 
-    // Lấy public URL của thumbnail
     const { data: urlData } = supabase.storage
       .from("documents")
       .getPublicUrl(uploadPath);

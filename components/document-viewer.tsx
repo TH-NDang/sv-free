@@ -25,13 +25,6 @@ export function DocumentViewer({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("DocumentViewer loaded with:", {
-      fileUrl,
-      fileType,
-      title,
-      thumbnailUrl,
-    });
-
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);

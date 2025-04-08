@@ -1,7 +1,6 @@
 "use client";
 
 import { DocumentsGrid } from "@/app/(main)/components/documents-grid";
-import { Document } from "@/app/(main)/types/document";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,35 +15,14 @@ import { useQuery } from "@tanstack/react-query";
 import { BookmarkIcon, FileUpIcon, PlusIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
-interface DbDocument {
-  id: string;
-  title: string;
-  description?: string | null;
-  fileUrl: string;
-  fileType?: string | null;
-  fileSize?: string | null;
-  categoryId?: string | null;
-  authorId?: string | null;
-  thumbnailUrl?: string | null;
-  published?: boolean;
-  downloadCount?: string;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string | null;
-  } | null;
-}
+import { Document } from "../documents/[id]/page";
 
 const fetchUserDocuments = async () => {
   const response = await fetch("/api/documents?myUploads=true");
   if (!response.ok) {
     throw new Error(`Error: ${response.status}`);
   }
-  return response.json() as Promise<DbDocument[]>;
+  return response.json() as Promise<Document[]>;
 };
 
 export default function ProfilePage() {
@@ -64,27 +42,13 @@ export default function ProfilePage() {
     enabled: !!user,
   });
 
-  // Convert DB documents to UI document format
-  const uploads: Document[] = dbDocuments.map((doc) => ({
-    id: doc.id,
-    title: doc.title,
-    description: doc.description || "",
-    category: doc.category?.name || "Uncategorized",
-    author: user?.name || "Unknown",
-    uploadDate: new Date(doc.createdAt).toISOString(),
-    downloadCount: parseInt(doc.downloadCount || "0"),
-    fileSize: doc.fileSize || "Unknown",
-    fileType: doc.fileType || "Unknown",
-    thumbnailUrl: doc.thumbnailUrl || "/placeholder-thumbnail.jpg",
-    status: doc.published ? "Published" : "Draft",
-  }));
-
-  // Use a subset for saved documents
-  const savedDocuments = uploads.slice(0, 4);
-
+  const savedDocuments = dbDocuments.slice(0, 4);
   const userStats = {
-    uploads: uploads.length,
-    downloads: uploads.reduce((sum, doc) => sum + doc.downloadCount, 0),
+    uploads: dbDocuments.length,
+    downloads: dbDocuments.reduce(
+      (sum, doc) => sum + parseInt(doc.downloadCount || "0"),
+      0
+    ),
     savedDocuments: savedDocuments.length,
   };
 
@@ -184,7 +148,7 @@ export default function ProfilePage() {
                 <p>Error loading documents</p>
                 <p className="text-sm">{(error as Error).message}</p>
               </div>
-            ) : uploads.length > 0 ? (
+            ) : dbDocuments.length > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">
@@ -197,7 +161,7 @@ export default function ProfilePage() {
                     </Button>
                   </Link>
                 </div>
-                <DocumentsGrid documents={uploads} />
+                <DocumentsGrid documents={dbDocuments} />
               </div>
             ) : (
               <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed">

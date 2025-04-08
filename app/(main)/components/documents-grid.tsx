@@ -1,14 +1,9 @@
 import { DownloadIcon, EyeIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Document } from "../documents/[id]/page";
 
-import { Document } from "../types/document";
-
-interface DocumentsGridProps {
-  documents: Document[];
-}
-
-export function DocumentsGrid({ documents }: DocumentsGridProps) {
+export function DocumentsGrid({ documents }: { documents: Document[] }) {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {documents.map((doc) => (
@@ -21,7 +16,7 @@ export function DocumentsGrid({ documents }: DocumentsGridProps) {
             className="relative block aspect-[16/10] w-full"
           >
             <Image
-              src={doc.thumbnailUrl}
+              src={doc.thumbnailUrl || ""}
               alt={doc.title}
               fill
               className="object-cover"
@@ -46,7 +41,7 @@ export function DocumentsGrid({ documents }: DocumentsGridProps) {
             </Link>
             <div className="text-muted-foreground mt-1 text-sm">
               {doc.author} •{" "}
-              {new Date(doc.uploadDate).toLocaleDateString("en-US", {
+              {new Date(doc.createdAt).toLocaleDateString("en-US", {
                 month: "numeric",
                 day: "numeric",
                 year: "numeric",

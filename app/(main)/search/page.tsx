@@ -353,6 +353,7 @@ export default function AdvancedSearchPage() {
           </div>
 
           {filteredDocuments.length > 0 ? (
+            // @ts-expect-error temp for mock data
             <DocumentsGrid documents={sortedDocuments} />
           ) : (
             <div className="flex h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">

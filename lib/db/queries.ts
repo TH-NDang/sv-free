@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { categories, documents } from "@/lib/db/schema";
+import { categories, documents, users } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
 
 // ==========================================
@@ -287,5 +287,14 @@ export async function getCategoryBySlug(slug: string) {
   } catch (error) {
     console.error(`Error fetching category with slug ${slug}:`, error);
     throw new Error("Không thể lấy thông tin danh mục");
+  }
+}
+export async function getAllUsers() {
+  try {
+    const result = await db.select().from(users);
+    return result;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw new Error("Không thể lấy danh sách người dùng");
   }
 }

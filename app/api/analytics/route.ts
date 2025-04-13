@@ -5,6 +5,7 @@ import {
   getFileTypeData,
   getTopDocuments,
   getUsers,
+  getNewUsers,
   getPendingDocumentsCount,
   getTotalStats,
 } from "@/lib/db/new_queries";
@@ -17,6 +18,7 @@ export async function GET() {
     const fileTypeData = await getFileTypeData();
     const topDocuments = await getTopDocuments();
     const users = await getUsers();
+    const newUsers = await getNewUsers();
     const pendingDocuments = await getPendingDocumentsCount();
     const totalStats = await getTotalStats();
 
@@ -27,6 +29,7 @@ export async function GET() {
       fileTypeData,
       topDocuments,
       users,
+      newUsers,
       pendingDocuments,
       totalDownloads: totalStats.totalDownloads,
       totalViews: totalStats.totalViews,

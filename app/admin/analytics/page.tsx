@@ -28,6 +28,7 @@ import { saveAs } from "file-saver";
 import { Download, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Toaster, toast } from "sonner";
+import { TopDocument, User } from "./types";
 
 async function fetchAnalyticsData() {
   const response = await fetch("/api/analytics");
@@ -74,14 +75,15 @@ export default function AnalyticsPage() {
     fileTypeData,
     topDocuments,
     users,
+    newUsers,
     pendingDocuments,
     totalDownloads,
     totalViews,
   } = data;
 
   // Logic tìm kiếm và phân trang người dùng
-  const filteredUsers = users.filter(
-    (user: any) =>
+  const filteredUsers = newUsers.filter(
+    (user: User) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -91,7 +93,7 @@ export default function AnalyticsPage() {
   const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   // Logic tìm kiếm và phân trang tài liệu
-  const filteredDocs = topDocuments.filter((doc: any) =>
+  const filteredDocs = topDocuments.filter((doc: TopDocument) =>
     doc.title.toLowerCase().includes(docSearchTerm.toLowerCase())
   );
   const indexOfLastDoc = docPage * itemsPerPage;
@@ -100,7 +102,7 @@ export default function AnalyticsPage() {
   const totalDocPages = Math.ceil(filteredDocs.length / itemsPerPage);
 
   // Logic lọc theo thời gian
-  const filteredDocumentData = monthlyStats.filter((data: any) => {
+  const filteredDocumentData = monthlyStats.filter((data: Document) => {
     if (timeFilter === "7days") {
       const recentMonths = monthlyStats.slice(-2);
       return recentMonths.includes(data);
@@ -116,13 +118,13 @@ export default function AnalyticsPage() {
   const exportCSV = () => {
     const headers = ["Tiêu đề,Danh mục,Lượt tải xuống,Lượt xem"];
     const rows = topDocuments.map(
-      (doc: any) => `${doc.title},${doc.category},${doc.downloads},${doc.views}`
+      (doc: TopDocument) => `${doc.title},${doc.category},${doc.downloads},${doc.views}`
     );
     const userHeaders = [
       "Người dùng,Email,Vai trò,Lượt tải lên,Lượt tải xuống",
     ];
-    const userRows = users.map(
-      (user: any) =>
+    const userRows = newUsers.map(
+      (user: User) =>
         `${user.name},${user.email},${user.role},${user.uploads},${user.downloads}`
     );
     const csvContent = [
@@ -286,7 +288,7 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader className="px-6 pt-0">
           <div className="flex items-center justify-between">
-            <CardTitle>Người dùng</CardTitle>
+            <CardTitle>Người dùng mới</CardTitle>
             <div className="flex w-full max-w-sm items-center space-x-2">
               <Input
                 placeholder="Tìm kiếm người dùng..."

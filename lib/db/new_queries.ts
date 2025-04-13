@@ -134,7 +134,50 @@ export async function getUsers() {
       uploads: user.uploads || 0,
       downloads: user.downloads || 0,
     }));
+}
+
+// Người dùng mới trong 7 ngày qua
+export async function getNewUsers() {
+  try {
+    // Tính toán ngày bắt đầu (7 ngày trước)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const result = await db
+      .select({
+        id: users.id,
+        name: users.username,
+        email: users.email,
+        role: users.role,
+        status: users.banned,
+        createdAt: users.createdAt,
+        uploads: sql<number>`COUNT(DISTINCT ${documents.id})`, // Số tài liệu đã tải lên
+        downloads: sql<number>`COUNT(${documentDownloads.id})`, // Số lượt tải xuống
+      })
+      .from(users)
+      .leftJoin(documents, eq(users.id, documents.authorId)) // Liên kết với bảng documents
+      .leftJoin(documentDownloads, eq(users.id, documentDownloads.userId)) // Liên kết với bảng documentDownloads
+      .where(
+        sql`${users.createdAt} >= ${oneWeekAgo.toISOString()} AND ${users.banned} = FALSE`
+      )
+      .groupBy(users.id) // Nhóm theo người dùng
+      .orderBy(desc(users.createdAt)); // Sắp xếp theo ngày tạo mới nhất
+
+    return result.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role || "student", // Đảm bảo role không null
+      status: user.status ? "Banned" : "Active",
+      createdAt: new Date(user.createdAt).toISOString().split("T")[0], // Format ngày
+      uploads: user.uploads || 0, // Số tài liệu đã tải lên
+      downloads: user.downloads || 0, // Số lượt tải xuống
+    }));
+  } catch (error) {
+    console.error("Error fetching new users:", error);
+    throw new Error("Failed to fetch new users");
   }
+}
 
 
 // Số tài liệu chờ duyệt

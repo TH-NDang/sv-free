@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -95,7 +96,8 @@ export const documents = pgTable("documents", {
   authorId: text("author_id").references(() => users.id),
   thumbnailUrl: text("thumbnail_url"),
   published: boolean("published").default(true).notNull(),
-  downloadCount: text("download_count").default("0"),
+  downloadCount: integer("download_count").default(0).notNull(),
+  viewCount: integer("view_count").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -138,11 +140,27 @@ export const ratings = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    rating: text("rating").notNull().$type<"1" | "2" | "3" | "4" | "5">(),
+    rating: integer("rating").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (table) => [unique("unique_rating").on(table.documentId, table.userId)]
+  (table) => [
+    unique("unique_rating").on(table.documentId, table.userId),
+    // Thêm ràng buộc kiểm tra để rating nằm trong khoảng 1-5
+    sql`CHECK (rating >= 1 AND rating <= 5)`,
+  ]
 );
+
+// Thêm bảng document_downloads
+export const documentDownloads = pgTable("document_downloads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  documentId: uuid("document_id")
+    .notNull()
+    .references(() => documents.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  downloadDate: timestamp("download_date").notNull().defaultNow(),
+});
 
 // ==========================================
 // Relations
@@ -154,6 +172,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   ratings: many(ratings),
   sessions: many(session),
   accounts: many(account),
+  downloads: many(documentDownloads),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -172,6 +191,7 @@ export const documentsRelations = relations(documents, ({ one, many }) => ({
   tags: many(documentTags),
   comments: many(comments),
   ratings: many(ratings),
+  downloads: many(documentDownloads),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -207,6 +227,17 @@ export const ratingsRelations = relations(ratings, ({ one }) => ({
   }),
   user: one(users, {
     fields: [ratings.userId],
+    references: [users.id],
+  }),
+}));
+
+export const documentDownloadsRelations = relations(documentDownloads, ({ one }) => ({
+  document: one(documents, {
+    fields: [documentDownloads.documentId],
+    references: [documents.id],
+  }),
+  user: one(users, {
+    fields: [documentDownloads.userId],
     references: [users.id],
   }),
 }));

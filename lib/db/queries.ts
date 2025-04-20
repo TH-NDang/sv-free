@@ -208,7 +208,7 @@ export async function getDocuments({
       .limit(limit)
       .offset(offset);
 
-    return results;
+    return results as DocumentWithDetails[];
   } catch (error) {
     console.error("Error fetching documents:", error);
     throw new Error("Không thể lấy danh sách tài liệu");
@@ -251,6 +251,7 @@ export async function getDocumentById(
         thumbnailStoragePath: documents.thumbnailStoragePath,
         published: documents.published,
         downloadCount: documents.downloadCount,
+        viewCount: documents.viewCount,
         createdAt: documents.createdAt,
         updatedAt: documents.updatedAt,
         categoryId: documents.categoryId,

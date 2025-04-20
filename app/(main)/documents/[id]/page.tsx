@@ -21,6 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentWithDetails } from "@/lib/db/queries";
+import { formatFileSize, getDisplayExtension } from "@/lib/utils";
 
 type FetchedDocument = DocumentWithDetails & {
   fileUrl: string | null;
@@ -42,14 +43,6 @@ const fetchDocument = async (id: string): Promise<FetchedDocument[]> => {
   }
 
   return response.json();
-};
-
-const formatFileSize = (bytes: number | null | undefined) => {
-  if (bytes === null || bytes === undefined || bytes === 0) return "N/A";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
 function DocumentDetailSkeleton() {
@@ -287,8 +280,7 @@ export default function DocumentDetailPage() {
                     <FileIcon className="h-4 w-4" /> Loại file:
                   </span>
                   <span className="text-right">
-                    {document.fileType?.split("/").pop()?.toUpperCase() ||
-                      "Không xác định"}
+                    {getDisplayExtension(document.fileType)}
                   </span>
                 </div>
 

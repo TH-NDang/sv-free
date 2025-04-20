@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { categories, documents, NewDocument, user } from "@/lib/db/schema";
-import { and, desc, eq, like, SQL } from "drizzle-orm";
+import { startOfDay, subDays, subMonths, subYears } from "date-fns";
+import { and, asc, desc, eq, gte, ilike, or, SQL } from "drizzle-orm";
 
 // ==========================================
 // Document Types
@@ -10,8 +11,12 @@ import { and, desc, eq, like, SQL } from "drizzle-orm";
  * Type for document query parameters
  */
 export type DocumentQueryParams = {
+  searchTerm?: string;
   categoryId?: string;
   authorId?: string;
+  fileType?: string;
+  dateRange?: "today" | "week" | "month" | "year" | "all";
+  sortBy?: "relevance" | "date" | "popular" | "az" | "za";
   limit?: number;
   offset?: number;
 };
@@ -24,6 +29,12 @@ export type DocumentWithDetails = typeof documents.$inferSelect & {
 // ==========================================
 // Category Types
 // ==========================================
+
+export type Category = typeof categories.$inferSelect;
+
+export type CategoryWithDocuments = typeof categories.$inferSelect & {
+  documents: (typeof documents.$inferSelect)[];
+};
 
 /**
  * Type for category creation
@@ -77,17 +88,30 @@ export async function createDocument(data: NewDocument) {
 }
 
 /**
- * Get documents with basic filtering, including author details
+ * Get documents with advanced filtering and sorting, including author details
  */
 export async function getDocuments({
+  searchTerm,
   categoryId,
   authorId,
+  fileType,
+  dateRange = "all",
+  sortBy = "relevance",
   limit = 10,
   offset = 0,
 }: DocumentQueryParams = {}): Promise<DocumentWithDetails[]> {
   try {
     // Build conditions for SQL using 'and'
     const conditions: (SQL | undefined)[] = [];
+
+    if (searchTerm) {
+      const searchCondition = or(
+        ilike(documents.title, `%${searchTerm}%`),
+        ilike(documents.description, `%${searchTerm}%`),
+        ilike(user.name, `%${searchTerm}%`) // Assuming author name search
+      );
+      conditions.push(searchCondition);
+    }
 
     if (categoryId) {
       conditions.push(eq(documents.categoryId, categoryId));
@@ -97,8 +121,58 @@ export async function getDocuments({
       conditions.push(eq(documents.authorId, authorId));
     }
 
+    if (fileType) {
+      conditions.push(eq(documents.fileType, fileType));
+    }
+
+    if (dateRange !== "all") {
+      let startDate: Date;
+      const now = new Date();
+
+      switch (dateRange) {
+        case "today":
+          startDate = startOfDay(now);
+          break;
+        case "week":
+          startDate = subDays(now, 7);
+          break;
+        case "month":
+          startDate = subMonths(now, 1);
+          break;
+        case "year":
+          startDate = subYears(now, 1);
+          break;
+      }
+      conditions.push(gte(documents.createdAt, startDate));
+    }
+
     const whereCondition =
       conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Determine sorting order
+    let orderByClause: SQL | SQL[];
+    switch (sortBy) {
+      case "date":
+        orderByClause = desc(documents.createdAt);
+        break;
+      case "popular":
+        orderByClause = desc(documents.downloadCount);
+        break;
+      case "az":
+        orderByClause = asc(documents.title);
+        break;
+      case "za":
+        orderByClause = desc(documents.title);
+        break;
+      case "relevance":
+      default:
+        // Basic relevance: prioritize newer documents if no search term
+        orderByClause = desc(documents.createdAt);
+        // More complex relevance could be added if needed,
+        // possibly involving full-text search capabilities if the DB supports it.
+        // For now, fallback to date.
+        break;
+    }
 
     const results = await db
       .select({
@@ -130,11 +204,10 @@ export async function getDocuments({
       .leftJoin(categories, eq(documents.categoryId, categories.id))
       .leftJoin(user, eq(documents.authorId, user.id)) // Join with user table
       .where(whereCondition) // Apply combined conditions
-      .orderBy(desc(documents.createdAt))
+      .orderBy(orderByClause)
       .limit(limit)
       .offset(offset);
 
-    // No need to map here, the select statement constructs the desired shape
     return results;
   } catch (error) {
     console.error("Error fetching documents:", error);
@@ -208,6 +281,26 @@ export async function getDocumentById(
   }
 }
 
+/**
+ * Get unique file types stored in the documents table
+ */
+export async function getUniqueFileTypes(): Promise<string[]> {
+  try {
+    const results = await db
+      .selectDistinct({ fileType: documents.fileType })
+      .from(documents)
+      .where(eq(documents.published, true)); // Optionally filter by published
+
+    // Filter out null/empty values and return unique types
+    return results
+      .map((r) => r.fileType)
+      .filter((ft): ft is string => ft !== null && ft !== "");
+  } catch (error) {
+    console.error("Error fetching unique file types:", error);
+    throw new Error("Không thể lấy danh sách loại tệp");
+  }
+}
+
 // ==========================================
 // Category Queries
 // ==========================================
@@ -221,11 +314,11 @@ export async function getCategories(params: CategoryQueryParams = {}) {
 
   try {
     if (search) {
-      // If there's a search term, filter by name
+      // If there's a search term, filter by name (case-insensitive)
       const results = await db
         .select()
         .from(categories)
-        .where(like(categories.name, `%${search}%`))
+        .where(ilike(categories.name, `%${search}%`))
         .orderBy(categories.name)
         .limit(limit)
         .offset(offset);

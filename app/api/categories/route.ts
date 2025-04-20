@@ -16,24 +16,14 @@ const categorySchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || undefined;
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
-
-    const categories = await getCategories({
-      search,
-      page,
-      limit,
-    });
-
+    const categories = await getCategories();
     return NextResponse.json(categories);
   } catch (error) {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
-      { error: "Không thể lấy danh sách danh mục" },
+      { error: "Failed to fetch categories" },
       { status: 500 }
     );
   }

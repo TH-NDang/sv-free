@@ -16,20 +16,20 @@ export function Providers({ children }: { children: ReactNode }) {
       replace={router.replace}
       onSessionChange={() => router.refresh()}
       providers={["google"]}
-      multiSession
+      // multiSession
       avatar
-      uploadAvatar={async (file) => {
-        const formData = new FormData();
-        formData.append("avatar", file);
+      // uploadAvatar={async (file) => {
+      //   const formData = new FormData();
+      //   formData.append("avatar", file);
 
-        const res = await fetch("/api/uploadAvatar", {
-          method: "POST",
-          body: formData,
-        });
-        const { data } = await res.json();
+      //   const res = await fetch("/api/uploadAvatar", {
+      //     method: "POST",
+      //     body: formData,
+      //   });
+      //   const { data } = await res.json();
 
-        return data.url;
-      }}
+      //   return data.url;
+      // }}
       settingsUrl="/settings"
     >
       <QueryProvider>{children}</QueryProvider>

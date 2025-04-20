@@ -30,7 +30,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
       //   return data.url;
       // }}
-      settingsUrl="/settings"
+      settingsURL="/settings"
     >
       <QueryProvider>{children}</QueryProvider>
     </AuthUIProvider>

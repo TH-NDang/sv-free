@@ -443,3 +443,7 @@ export async function getCategoryBySlug(slug: string) {
     throw new Error("Không thể lấy thông tin danh mục");
   }
 }
+
+// ==========================================
+// Export all functions
+// ==========================================

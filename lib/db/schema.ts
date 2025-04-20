@@ -1,7 +1,9 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -104,7 +106,8 @@ export const documents = pgTable("documents", {
   categoryId: uuid("category_id").references(() => categories.id),
   authorId: text("author_id").references(() => user.id),
   published: boolean("published").default(true).notNull(),
-  downloadCount: bigint("download_count", { mode: "number" }).default(0),
+  downloadCount: integer("download_count").default(0).notNull(),
+  viewCount: integer("view_count").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -169,8 +172,12 @@ export const ratings = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    rating: text("rating").notNull().$type<"1" | "2" | "3" | "4" | "5">(),
+    rating: integer("rating").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (table) => [unique("unique_rating").on(table.documentId, table.userId)]
+  (table) => [
+    unique("unique_rating").on(table.documentId, table.userId),
+    // Thêm ràng buộc kiểm tra để rating nằm trong khoảng 1-5
+    sql`CHECK (rating >= 1 AND rating <= 5)`,
+  ]
 );

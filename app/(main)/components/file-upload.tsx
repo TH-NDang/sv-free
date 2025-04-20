@@ -261,7 +261,7 @@ export function FileUpload({
       return;
     }
 
-    const thumbnailStoragePath = `user_${userId}/${path ? `${path}/` : ""}${documentId}.webp`;
+    // const thumbnailStoragePath = `user_${userId}/${path ? `${path}/` : ""}${documentId}.webp`;
 
     try {
       setUploading(true);
@@ -282,34 +282,34 @@ export function FileUpload({
         throw new Error(`Failed to upload: ${uploadError.message}`);
       }
 
-      const thumbnailResponse = await fetch("/api/generate-thumbnail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          documentId: documentId,
-          storagePath: storagePath,
-          thumbnailStoragePath: thumbnailStoragePath,
-          originalFilename: file.name,
-        }),
-      });
+      // const thumbnailResponse = await fetch("/api/generate-thumbnail", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     documentId: documentId,
+      //     storagePath: storagePath,
+      //     thumbnailStoragePath: thumbnailStoragePath,
+      //     originalFilename: file.name,
+      //   }),
+      // });
 
-      let finalThumbnailPath: string | null = null;
-      if (thumbnailResponse.ok) {
-        const thumbnailData = await thumbnailResponse.json();
-        finalThumbnailPath =
-          thumbnailData.thumbnailStoragePath || thumbnailStoragePath;
-      } else {
-        let thumbErrorMsg = "Thumbnail generation failed or skipped.";
-        try {
-          const err = await thumbnailResponse.json();
-          thumbErrorMsg = err.message || err.error || thumbErrorMsg;
-        } catch {
-          /* ignore */
-        }
-        console.warn("Thumbnail generation error:", thumbErrorMsg);
-      }
+      // let finalThumbnailPath: string | null = null;
+      // if (thumbnailResponse.ok) {
+      //   const thumbnailData = await thumbnailResponse.json();
+      //   finalThumbnailPath =
+      //     thumbnailData.thumbnailStoragePath || thumbnailStoragePath;
+      // } else {
+      //   let thumbErrorMsg = "Thumbnail generation failed or skipped.";
+      //   try {
+      //     const err = await thumbnailResponse.json();
+      //     thumbErrorMsg = err.message || err.error || thumbErrorMsg;
+      //   } catch {
+      //     /* ignore */
+      //   }
+      //   console.warn("Thumbnail generation error:", thumbErrorMsg);
+      // }
 
       const documentDataToSave = {
         id: documentId,
@@ -317,9 +317,10 @@ export function FileUpload({
         description: description || undefined,
         originalFilename: file.name,
         storagePath: storagePath,
-        fileType: file.type,
+        fileType: file.type || getMimeType(file.name.split(".").pop() || ""),
         fileSize: file.size,
-        thumbnailStoragePath: finalThumbnailPath,
+        // thumbnailStoragePath: finalThumbnailPath,
+        thumbnailStoragePath: null,
         categoryId: selectedCategories[0].value,
       };
 

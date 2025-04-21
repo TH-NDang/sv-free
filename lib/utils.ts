@@ -1,4 +1,3 @@
-import { env } from "@/env/client";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -10,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function absoluteUrl(path: string) {
-  return `${env.NEXT_PUBLIC_API_ENDPOINT}${path}`;
+  return `${process.env.NEXT_PUBLIC_API_ENDPOINT}${path}`;
 }
 
 export function formatDate(date: Date | string): string {

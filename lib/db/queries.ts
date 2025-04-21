@@ -1,38 +1,40 @@
 import { db } from "@/lib/db";
-import { categories, documents, users } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { categories, documents, NewDocument, user } from "@/lib/db/schema";
+import { startOfDay, subDays, subMonths, subYears } from "date-fns";
+import { and, asc, desc, eq, gte, ilike, or, SQL } from "drizzle-orm";
 
 // ==========================================
 // Document Types
 // ==========================================
 
 /**
- * Type for document creation
- */
-export interface CreateDocumentData {
-  title: string;
-  description?: string | null;
-  fileUrl: string;
-  fileType?: string | null;
-  fileSize?: string | null;
-  categoryId?: string | null;
-  authorId?: string | null;
-  thumbnailUrl?: string | null;
-  published?: boolean;
-}
-
-/**
  * Type for document query parameters
  */
 export type DocumentQueryParams = {
+  searchTerm?: string;
   categoryId?: string;
+  authorId?: string;
+  fileType?: string;
+  dateRange?: "today" | "week" | "month" | "year" | "all";
+  sortBy?: "relevance" | "date" | "popular" | "az" | "za";
   limit?: number;
   offset?: number;
+};
+
+export type DocumentWithDetails = typeof documents.$inferSelect & {
+  category: typeof categories.$inferSelect | null;
+  author: Pick<typeof user.$inferSelect, "id" | "name" | "image"> | null;
 };
 
 // ==========================================
 // Category Types
 // ==========================================
+
+export type Category = typeof categories.$inferSelect;
+
+export type CategoryWithDocuments = typeof categories.$inferSelect & {
+  documents: (typeof documents.$inferSelect)[];
+};
 
 /**
  * Type for category creation
@@ -52,6 +54,15 @@ export interface UpdateCategoryData {
   description?: string | null;
 }
 
+/**
+ * Type for category query parameters
+ */
+export interface CategoryQueryParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 // ==========================================
 // Document Queries
 // ==========================================
@@ -59,25 +70,9 @@ export interface UpdateCategoryData {
 /**
  * Create a new document
  */
-export async function createDocument(data: CreateDocumentData) {
+export async function createDocument(data: NewDocument) {
   try {
-    console.log("Creating document with data:", data);
-
-    // Prepare document data with defaults for optional fields
-    const documentData = {
-      title: data.title,
-      description: data.description || null,
-      fileUrl: data.fileUrl,
-      fileType: data.fileType || null,
-      fileSize: data.fileSize || null,
-      categoryId: data.categoryId || null,
-      authorId: data.authorId || null,
-      thumbnailUrl: data.thumbnailUrl || null,
-      published: data.published !== undefined ? data.published : true,
-      downloadCount: "0",
-    };
-
-    const result = await db.insert(documents).values(documentData).returning();
+    const result = await db.insert(documents).values(data).returning();
 
     if (!result || result.length === 0) {
       throw new Error("Document không được tạo");
@@ -93,49 +88,127 @@ export async function createDocument(data: CreateDocumentData) {
 }
 
 /**
- * Get documents with basic filtering
+ * Get documents with advanced filtering and sorting, including author details
  */
 export async function getDocuments({
+  searchTerm,
   categoryId,
+  authorId,
+  fileType,
+  dateRange = "all",
+  sortBy = "relevance",
   limit = 10,
   offset = 0,
-}: DocumentQueryParams = {}) {
+}: DocumentQueryParams = {}): Promise<DocumentWithDetails[]> {
   try {
-    let query;
+    // Build conditions for SQL using 'and'
+    const conditions: (SQL | undefined)[] = [];
 
-    if (categoryId) {
-      // Nếu có categoryId, thêm điều kiện where ngay từ đầu
-      query = db
-        .select({
-          document: documents,
-          category: categories,
-        })
-        .from(documents)
-        .where(eq(documents.categoryId, categoryId))
-        .leftJoin(categories, eq(documents.categoryId, categories.id))
-        .orderBy(desc(documents.createdAt))
-        .limit(limit)
-        .offset(offset);
-    } else {
-      // Nếu không có điều kiện lọc
-      query = db
-        .select({
-          document: documents,
-          category: categories,
-        })
-        .from(documents)
-        .leftJoin(categories, eq(documents.categoryId, categories.id))
-        .orderBy(desc(documents.createdAt))
-        .limit(limit)
-        .offset(offset);
+    if (searchTerm) {
+      const searchCondition = or(
+        ilike(documents.title, `%${searchTerm}%`),
+        ilike(documents.description, `%${searchTerm}%`),
+        ilike(user.name, `%${searchTerm}%`) // Assuming author name search
+      );
+      conditions.push(searchCondition);
     }
 
-    const results = await query;
+    if (categoryId) {
+      conditions.push(eq(documents.categoryId, categoryId));
+    }
 
-    return results.map(({ document, category }) => ({
-      ...document,
-      category,
-    }));
+    if (authorId) {
+      conditions.push(eq(documents.authorId, authorId));
+    }
+
+    if (fileType) {
+      conditions.push(eq(documents.fileType, fileType));
+    }
+
+    if (dateRange !== "all") {
+      let startDate: Date;
+      const now = new Date();
+
+      switch (dateRange) {
+        case "today":
+          startDate = startOfDay(now);
+          break;
+        case "week":
+          startDate = subDays(now, 7);
+          break;
+        case "month":
+          startDate = subMonths(now, 1);
+          break;
+        case "year":
+          startDate = subYears(now, 1);
+          break;
+      }
+      conditions.push(gte(documents.createdAt, startDate));
+    }
+
+    const whereCondition =
+      conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Determine sorting order
+    let orderByClause: SQL | SQL[];
+    switch (sortBy) {
+      case "date":
+        orderByClause = desc(documents.createdAt);
+        break;
+      case "popular":
+        orderByClause = desc(documents.downloadCount);
+        break;
+      case "az":
+        orderByClause = asc(documents.title);
+        break;
+      case "za":
+        orderByClause = desc(documents.title);
+        break;
+      case "relevance":
+      default:
+        // Basic relevance: prioritize newer documents if no search term
+        orderByClause = desc(documents.createdAt);
+        // More complex relevance could be added if needed,
+        // possibly involving full-text search capabilities if the DB supports it.
+        // For now, fallback to date.
+        break;
+    }
+
+    const results = await db
+      .select({
+        // Select all fields from documents
+        id: documents.id,
+        title: documents.title,
+        description: documents.description,
+        originalFilename: documents.originalFilename,
+        storagePath: documents.storagePath,
+        fileType: documents.fileType,
+        fileSize: documents.fileSize,
+        thumbnailStoragePath: documents.thumbnailStoragePath,
+        published: documents.published,
+        downloadCount: documents.downloadCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        categoryId: documents.categoryId,
+        authorId: documents.authorId,
+        // Select category details
+        category: categories,
+        // Select specific author details
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
+      })
+      .from(documents)
+      .leftJoin(categories, eq(documents.categoryId, categories.id))
+      .leftJoin(user, eq(documents.authorId, user.id)) // Join with user table
+      .where(whereCondition) // Apply combined conditions
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset(offset);
+
+    return results as DocumentWithDetails[];
   } catch (error) {
     console.error("Error fetching documents:", error);
     throw new Error("Không thể lấy danh sách tài liệu");
@@ -143,31 +216,89 @@ export async function getDocuments({
 }
 
 /**
- * Get a single document by ID
+ * Get documents uploaded by a specific user
  */
-export async function getDocumentById(id: string) {
+export async function getUserDocuments(userId: string, limit = 50, offset = 0) {
+  try {
+    return await getDocuments({
+      authorId: userId,
+      limit,
+      offset,
+    });
+  } catch (error) {
+    console.error(`Error fetching documents for user ${userId}:`, error);
+    throw new Error("Không thể lấy danh sách tài liệu của người dùng");
+  }
+}
+
+/**
+ * Get a single document by ID, including author details
+ */
+export async function getDocumentById(
+  id: string
+): Promise<DocumentWithDetails | null> {
   try {
     const result = await db
       .select({
-        document: documents,
+        // Select all fields from documents
+        id: documents.id,
+        title: documents.title,
+        description: documents.description,
+        originalFilename: documents.originalFilename,
+        storagePath: documents.storagePath,
+        fileType: documents.fileType,
+        fileSize: documents.fileSize,
+        thumbnailStoragePath: documents.thumbnailStoragePath,
+        published: documents.published,
+        downloadCount: documents.downloadCount,
+        viewCount: documents.viewCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        categoryId: documents.categoryId,
+        authorId: documents.authorId,
+        // Select category details
         category: categories,
+        // Select specific author details
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
       })
       .from(documents)
       .where(eq(documents.id, id))
       .leftJoin(categories, eq(documents.categoryId, categories.id))
+      .leftJoin(user, eq(documents.authorId, user.id))
       .limit(1);
 
     if (result.length === 0) {
       return null;
     }
 
-    return {
-      ...result[0].document,
-      category: result[0].category,
-    };
+    return result[0];
   } catch (error) {
     console.error(`Error fetching document with ID ${id}:`, error);
     throw new Error("Không thể lấy thông tin tài liệu");
+  }
+}
+
+/**
+ * Get unique file types stored in the documents table
+ */
+export async function getUniqueFileTypes(): Promise<string[]> {
+  try {
+    const results = await db
+      .selectDistinct({ fileType: documents.fileType })
+      .from(documents)
+      .where(eq(documents.published, true)); // Optionally filter by published
+
+    // Filter out null/empty values and return unique types
+    return results
+      .map((r) => r.fileType)
+      .filter((ft): ft is string => ft !== null && ft !== "");
+  } catch (error) {
+    console.error("Error fetching unique file types:", error);
+    throw new Error("Không thể lấy danh sách loại tệp");
   }
 }
 
@@ -178,9 +309,33 @@ export async function getDocumentById(id: string) {
 /**
  * Get all categories
  */
-export async function getCategories() {
+export async function getCategories(params: CategoryQueryParams = {}) {
+  const { search, page = 1, limit = 50 } = params;
+  const offset = (page - 1) * limit;
+
   try {
-    return await db.select().from(categories).orderBy(categories.name);
+    if (search) {
+      // If there's a search term, filter by name (case-insensitive)
+      const results = await db
+        .select()
+        .from(categories)
+        .where(ilike(categories.name, `%${search}%`))
+        .orderBy(categories.name)
+        .limit(limit)
+        .offset(offset);
+
+      return results;
+    } else {
+      // No search, return all with pagination
+      const results = await db
+        .select()
+        .from(categories)
+        .orderBy(categories.name)
+        .limit(limit)
+        .offset(offset);
+
+      return results;
+    }
   } catch (error) {
     console.error("Error fetching categories:", error);
     throw new Error("Không thể lấy danh sách danh mục");
@@ -289,12 +444,7 @@ export async function getCategoryBySlug(slug: string) {
     throw new Error("Không thể lấy thông tin danh mục");
   }
 }
-export async function getAllUsers() {
-  try {
-    const result = await db.select().from(users);
-    return result;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    throw new Error("Không thể lấy danh sách người dùng");
-  }
-}
+
+// ==========================================
+// Export all functions
+// ==========================================

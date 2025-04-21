@@ -1,7 +1,7 @@
-import { Document } from "@/app/(main)/types/document";
 import { Button } from "@/components/ui/button";
 import { BookOpenIcon, TrendingUpIcon } from "lucide-react";
 import Link from "next/link";
+import { Document } from "@/lib/db/schema";
 
 export function DocumentListPopular({ documents }: { documents: Document[] }) {
   return (

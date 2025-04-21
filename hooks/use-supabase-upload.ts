@@ -151,9 +151,6 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
         if (normalizeFilenames) {
           const normalizedName = normalizeFilePath(file.name);
           if (normalizedName !== file.name) {
-            console.log(
-              `Normalized filename: "${file.name}" → "${normalizedName}"`
-            );
             fileName = normalizedName;
           }
         }

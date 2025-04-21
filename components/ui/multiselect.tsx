@@ -5,8 +5,8 @@ import { XIcon } from "lucide-react";
 import * as React from "react";
 import { useEffect } from "react";
 
-import { cn } from "@/lib/utils";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 export interface Option {
   value: string;
@@ -67,6 +67,8 @@ interface MultipleSelectorProps {
   selectFirstItem?: boolean;
   /** Allow user to create option when there is no option matched. */
   creatable?: boolean;
+  /** Callback when user creates a new option. If provided, the component won't automatically add the new option. */
+  onCreateOption?: (inputValue: string) => void;
   /** Props of `Command` */
   commandProps?: React.ComponentPropsWithoutRef<typeof Command>;
   /** Props of `CommandInput` */
@@ -182,6 +184,7 @@ const MultipleSelector = ({
   commandProps,
   inputProps,
   hideClearAllButton = false,
+  onCreateOption,
 }: MultipleSelectorProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [open, setOpen] = React.useState(false);
@@ -343,6 +346,15 @@ const MultipleSelector = ({
             onMaxSelected?.(selected.length);
             return;
           }
+          
+          // If onCreateOption is provided, call it and let the parent component handle the rest
+          if (onCreateOption) {
+            onCreateOption(value);
+            setInputValue("");
+            return;
+          }
+          
+          // Default behavior - add the option directly
           setInputValue("");
           const newOptions = [...selected, { value, label: value }];
           setSelected(newOptions);

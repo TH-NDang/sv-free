@@ -1,9 +1,9 @@
-import { env } from "@/env/server";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, oneTap } from "better-auth/plugins";
+
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -17,8 +17,8 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: env.GOOGLE_CLIENT_ID!,
-      clientSecret: env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
   plugins: [oneTap(), admin()],

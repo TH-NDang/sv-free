@@ -1,11 +1,8 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "./server";
 
-const supabase = await createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = await createClient();
 
 export const getPublicUrl = async (
   path: string | null | undefined,

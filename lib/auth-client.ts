@@ -12,7 +12,6 @@ export const authClient = createAuthClient({
       // Optional client configuration:
       autoSelect: true,
       cancelOnTapOutside: true,
-      context: "auth/sign-in",
       additionalOptions: {
         // Any extra options for the Google initialize method
         shape: "circle",

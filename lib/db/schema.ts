@@ -101,7 +101,7 @@ export const documents = pgTable("documents", {
   originalFilename: text("original_filename").notNull(),
   storagePath: text("storage_path").notNull().unique(),
   fileType: varchar("file_type", { length: 100 }),
-  fileSize: bigint("file_size", { mode: "number" }),
+  fileSize: bigint("file_size", { mode: "number" }),//kích thước KB
   thumbnailStoragePath: text("thumbnail_storage_path").unique(),
   categoryId: uuid("category_id").references(() => categories.id),
   authorId: text("author_id").references(() => user.id),
@@ -114,6 +114,20 @@ export const documents = pgTable("documents", {
 
 export type Document = InferSelectModel<typeof documents>;
 export type NewDocument = InferInsertModel<typeof documents>;
+
+export const documentDownloads = pgTable("document_downloads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  documentId: uuid("document_id")
+    .notNull()
+    .references(() => documents.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  downloadDate: timestamp("download_date").defaultNow().notNull(),
+});
+
+export type DocumentDownload = InferSelectModel<typeof documentDownloads>;
+export type NewDocumentDownload = InferInsertModel<typeof documentDownloads>;
 
 export const documentSchema = z.object({
   title: z
@@ -150,20 +164,8 @@ export const documentTags = pgTable("document_tags", {
     .references(() => tags.id, { onDelete: "cascade" }),
 });
 
-export const comments = pgTable("comments", {
-  id: text("id").primaryKey(),
-  documentId: uuid("document_id")
-    .notNull()
-    .references(() => documents.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  content: text("content").notNull(),
-  commentDate: timestamp("comment_date").notNull().defaultNow(),
-});
-
-export const ratings = pgTable(
-  "ratings",
+export const reviews = pgTable(
+  "reviews",
   {
     id: text("id").primaryKey(),
     documentId: uuid("document_id")
@@ -172,12 +174,17 @@ export const ratings = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    rating: integer("rating").notNull(),
+    userName: text("user_name").notNull(), // Tên người dùng (có thể là tên thật hoặc tên hiển thị)
+    userImage: text("user_image"), // Hình ảnh người dùng (có thể là URL hoặc đường dẫn đến hình ảnh)
+    comment: text("comment").default(sql`NULL`), // Nội dung bình luận (có thể null nếu chỉ là đánh giá)
+    rating: integer("rating"), // Đảm bảo rating nằm trong khoảng 1-5 hoặc null
     createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(), // Thêm cột updatedAt để theo dõi cập nhật
   },
   (table) => [
-    unique("unique_rating").on(table.documentId, table.userId),
-    // Thêm ràng buộc kiểm tra để rating nằm trong khoảng 1-5
-    sql`CHECK (rating >= 1 AND rating <= 5)`,
+    sql`CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5))`, // Đảm bảo rating nằm trong khoảng 1-5 hoặc null
   ]
 );
+
+export type Review = InferSelectModel<typeof reviews>;
+export type NewReview = InferInsertModel<typeof reviews>;

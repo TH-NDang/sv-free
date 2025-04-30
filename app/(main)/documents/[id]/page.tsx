@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftIcon,
   BookmarkIcon,
@@ -9,10 +9,11 @@ import {
   EyeIcon,
   FileIcon,
   ShareIcon,
+  StarIcon,
   UserIcon,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { FormEvent, Key, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { DocumentViewer } from "@/components/document-viewer";
@@ -102,10 +103,29 @@ function DocumentDetailSkeleton() {
   );
 }
 
+const useUserSession = () => {
+  return useQuery({
+    queryKey: ["userSession"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me");
+      if (!response.ok) {
+        throw new Error("Không thể lấy thông tin người dùng.");
+      }
+      return response.json();
+    },
+  });
+};
+
 export default function DocumentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const documentId = params.id as string;
+  const queryClient = useQueryClient();
+
+  const [selectedRating, setSelectedRating] = useState<number>(0);
+  const [currentRating, setCurrentRating] = useState<number>(0);
+  const [comment, setComment] = useState("");
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
 
   const {
     data: documentDataArray,
@@ -121,9 +141,110 @@ export default function DocumentDetailPage() {
 
   const document = documentDataArray?.[0];
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+
+  const {
+    data: user,
+    isLoading: userLoading,
+    isError: userError,
+  } = useUserSession();
+
+  if (userLoading) return <p>Đang tải thông tin người dùng...</p>;
+  if (userError) return <p>Không thể lấy thông tin người dùng.</p>;
+
+  console.log("User session:", user);
+
+  const handleReviewSubmit = useMutation({
+    mutationFn: async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (!user) {
+        toast.error("Không thể gửi đánh giá. Người dùng chưa đăng nhập.");
+        return;
+      }
+
+      const form = event.target as HTMLFormElement;
+      const formData = new FormData(form);
+      const rating = currentRating;
+      const comment = formData.get("comment")?.toString() || "";
+
+      if (!rating && !comment) {
+        toast.error("Vui lòng nhập đánh giá hoặc bình luận.");
+        return;
+      }
+
+      const newReview = {
+        userId: user.user.id || "",
+        userName: user.user.name || "",
+        userImage: user.user.image || "",
+        rating,
+        comment,
+      };
+
+      if (editingReviewId) {
+        // Gọi API để cập nhật đánh giá
+        await fetch(`/api/documents/${documentId}/review/${editingReviewId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newReview),
+        });
+        toast.success("Cập nhật đánh giá thành công!");
+      } else {
+        // Gọi API để thêm đánh giá mới
+        await fetch(`/api/documents/${documentId}/review`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newReview),
+        });
+        toast.success("Gửi đánh giá thành công!");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["document", documentId] });
+      setComment(""); // Reset comment
+      setCurrentRating(0); // Reset rating
+      setEditingReviewId(null); // Reset trạng thái chỉnh sửa
+    },
+  });
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (isFetchingMore) return; // Nếu đang tải thêm thì không làm gì cả
+      setIsFetchingMore(true);
+      try {
+        const response = await fetch(
+          `/api/documents/${documentId}/review?page=${currentPage}&limit=2`
+        );
+        if (!response.ok) {
+          throw new Error("Không thể tải danh sách đánh giá.");
+        }
+        const data = await response.json();
+        setReviews((prev) => [...prev, ...data.reviews]);
+      } catch (error) {
+        toast.error("Đã xảy ra lỗi khi tải đánh giá.");
+      } finally {
+        setIsFetchingMore(false);
+      }
+    };
+
+    fetchReviews();
+  }, [currentPage, documentId]);
+
   useEffect(() => {
     if (isError && error) {
-      toast.error(error.message || "Không thể lấy thông tin tài liệu");
+      toast.error(
+        (error as Error).message || "Không thể lấy thông tin tài liệu"
+      );
     }
     if (
       !isLoading &&
@@ -135,10 +256,6 @@ export default function DocumentDetailPage() {
     }
   }, [isError, error, isLoading, documentDataArray]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
   if (isLoading) {
     return <DocumentDetailSkeleton />;
   }
@@ -149,8 +266,8 @@ export default function DocumentDetailPage() {
         <FileIcon className="text-muted-foreground mb-4 h-16 w-16" />
         <h1 className="text-2xl font-bold">Không tìm thấy tài liệu</h1>
         <p className="text-muted-foreground mt-2 text-center">
-          {error instanceof Error
-            ? `Lỗi: ${error.message}`
+          {typeof error === "object" && error !== null && "message" in error
+            ? `Lỗi: ${(error as Error).message}`
             : "Tài liệu bạn đang tìm kiếm không tồn tại hoặc đã bị xóa."}
         </p>
         <Button onClick={handleGoBack} variant="outline" className="mt-6">
@@ -160,6 +277,53 @@ export default function DocumentDetailPage() {
       </div>
     );
   }
+
+  const handleEditReview = (review: any) => {
+    setComment(review.comment || ""); // Đặt nội dung vào textarea
+    setCurrentRating(review.rating || 0); // Đặt rating
+    setEditingReviewId(review.id); // Lưu ID của đánh giá đang chỉnh sửa
+  };
+
+  const handleDeleteReview = async (review: any) => {
+    if (confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) {
+      try {
+        await fetch(`/api/documents/${documentId}/review/${review.id}`, {
+          method: "DELETE",
+        });
+        toast.success("Xóa đánh giá thành công!");
+        queryClient.invalidateQueries({ queryKey: ["document", documentId] });
+      } catch (error) {
+        toast.error("Đã xảy ra lỗi khi xóa đánh giá.");
+      }
+    }
+  };
+
+  const handleSaveEdit = async (reviewId: string) => {
+    if (!currentRating && !comment) {
+      toast.error("Vui lòng nhập đánh giá hoặc bình luận.");
+      return;
+    }
+
+    try {
+      await fetch(`/api/documents/${documentId}/review/${reviewId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rating: currentRating,
+          comment,
+        }),
+      });
+      toast.success("Cập nhật đánh giá thành công!");
+      queryClient.invalidateQueries({ queryKey: ["document", documentId] });
+      setEditingReviewId(null); // Đặt lại trạng thái chỉnh sửa
+      setComment(""); // Reset comment
+      setCurrentRating(0); // Reset rating
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi cập nhật đánh giá.");
+    }
+  };
 
   return (
     <div className="container mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-6">
@@ -231,7 +395,7 @@ export default function DocumentDetailPage() {
       {/* Document details */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden p-5">
             <CardContent className="min-h-[500px] p-0">
               {document.fileUrl ? (
                 <DocumentViewer
@@ -300,6 +464,222 @@ export default function DocumentDetailPage() {
                   <span className="text-right">
                     {document.downloadCount ?? 0}
                   </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="p-4 md:p-6">
+              <h3 className="mb-4 text-lg font-medium">Đánh giá & Bình luận</h3>
+              <Separator className="mb-4" />
+
+              {/* Form gửi đánh giá và bình luận */}
+              <form
+                onSubmit={(event) => {
+                  handleReviewSubmit.mutate(event);
+                }}
+              >
+                <div className="mb-4">
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    Đánh giá tài liệu:
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <label key={i}>
+                        <input
+                          type="radio"
+                          name="rating"
+                          value={i + 1}
+                          className="hidden"
+                        />
+                        <StarIcon
+                          className={`h-5 w-5 cursor-pointer transition-transform duration-200 ${
+                            i < selectedRating
+                              ? "scale-110 text-yellow-500"
+                              : "text-muted-foreground"
+                          }`}
+                          onMouseEnter={() => setSelectedRating(i + 1)} // Highlight khi hover
+                          onMouseLeave={() => setSelectedRating(currentRating)} // Reset khi rời chuột
+                          onClick={() => setCurrentRating(i + 1)} // Cập nhật rating khi click
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  name="comment"
+                  rows={3}
+                  className="w-full rounded-md border p-2 text-sm"
+                  placeholder="Nhập bình luận của bạn..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+                <Button type="submit" className=" mt-2" size="sm">
+                  Gửi đánh giá & bình luận
+                </Button>
+              </form>
+
+              <Separator className="my-6" />
+
+              <div>
+                <div>
+                  <div className="space-y-4">
+                    {reviews?.length ? (
+                      reviews.map(
+                        (
+                          review: {
+                            id: string;
+                            userId: string | null | undefined;
+                            userName: string | null | undefined;
+                            userImage: string | null | undefined;
+                            rating: number | null | undefined;
+                            comment: string | null | undefined;
+                            createdAt: string | null | undefined;
+                          },
+                          index: Key | null | undefined
+                        ) => (
+                          <div key={index} className="border-b pb-4">
+                            {editingReviewId === review.id ? (
+                              // Hiển thị form sửa nếu đang chỉnh sửa
+                              <form
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  handleSaveEdit(review.id);
+                                }}
+                              >
+                                <div className="mb-2">
+                                  <p className="text-muted-foreground mb-2 text-sm">
+                                    Sửa đánh giá:
+                                  </p>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: 5 }, (_, i) => (
+                                      <label key={i}>
+                                        <input
+                                          type="radio"
+                                          name="rating"
+                                          value={i + 1}
+                                          className="hidden"
+                                          checked={currentRating === i + 1}
+                                          onChange={() =>
+                                            setCurrentRating(i + 1)
+                                          }
+                                        />
+                                        <StarIcon
+                                          className={`h-5 w-5 cursor-pointer transition-transform duration-200 ${
+                                            i < currentRating
+                                              ? "scale-110 text-yellow-500"
+                                              : "text-muted-foreground"
+                                          }`}
+                                          onClick={() =>
+                                            setCurrentRating(i + 1)
+                                          }
+                                        />
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                                <textarea
+                                  name="comment"
+                                  rows={3}
+                                  className="w-full rounded-md border p-2 text-sm"
+                                  placeholder="Nhập bình luận của bạn..."
+                                  value={comment}
+                                  onChange={(e) => setComment(e.target.value)}
+                                />
+                                <div className="mt-2 flex gap-2">
+                                  <Button
+                                    type="submit"
+                                    variant="outline"
+                                    size="sm"
+                                  >
+                                    Lưu
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setEditingReviewId(null)}
+                                  >
+                                    Hủy
+                                  </Button>
+                                </div>
+                              </form>
+                            ) : (
+                              // Hiển thị nội dung đánh giá nếu không chỉnh sửa
+                              <>
+                                <p className="mt-2 flex items-center gap-2 text-sm font-medium">
+                                  {review.userName ||
+                                    "Người dùng không xác định"}
+                                  {review.userImage && (
+                                    <img
+                                      src={review.userImage}
+                                      alt="User Avatar"
+                                      className="ml-2 h-6 w-6 rounded-full"
+                                    />
+                                  )}
+                                </p>
+                                <div className="mt-1.5 flex items-center gap-2">
+                                  {Array.from({ length: 5 }, (_, i) => (
+                                    <StarIcon
+                                      key={i}
+                                      className={`h-2 w-2 ${
+                                        i < (review.rating ?? 0)
+                                          ? "text-yellow-500"
+                                          : "text-muted-foreground"
+                                      }`}
+                                    />
+                                  ))}
+                                  <p className="text-muted-foreground mt-0.5 text-sm">
+                                    {review.createdAt &&
+                                      new Date(
+                                        review.createdAt
+                                      ).toLocaleDateString("vi-VN")}
+                                  </p>
+                                </div>
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                  {review.comment}
+                                </p>
+
+                                {/* Hiển thị nút "Sửa" và "Xóa" nếu là đánh giá của người dùng */}
+                                {review.userId === user?.user?.id && (
+                                  <div className="mt-2 flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditReview(review)}
+                                    >
+                                      Sửa
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDeleteReview(review)}
+                                    >
+                                      Xóa
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )
+                      )
+                    ) : (
+                      <p className="text-muted-foreground text-sm italic">
+                        Chưa có đánh giá hoặc bình luận nào.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {/* Nút "Xem thêm" */}
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                  >
+                    Xem thêm
+                  </Button>
                 </div>
               </div>
             </CardContent>

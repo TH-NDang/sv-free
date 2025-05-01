@@ -10,7 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 // Thiết lập kết nối database riêng cho seed
 // ==========================================
 config({
-  path: ".env",
+  path: ".env.local",
 });
 
 const DATABASE_URL = process.env.DATABASE_URL;

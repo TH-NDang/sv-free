@@ -15,17 +15,18 @@ const MarkdownRenderer: FC<MarkdownRendererProps> = ({
   classname,
   inline = false
 }) => (
-  <ReactMarkdown
-    className={cn(
-      'prose prose-h1:text-xl dark:prose-invert flex w-full flex-col gap-y-5 rounded-lg',
-      classname
-    )}
-    components={{ ...(inline ? inlineComponents : components) }}
-    remarkPlugins={[remarkGfm]}
-    rehypePlugins={[rehypeRaw, rehypeSanitize]}
-  >
-    {children}
-  </ReactMarkdown>
+  <div className={cn(
+    'prose prose-h1:text-xl dark:prose-invert flex w-full flex-col gap-y-5 rounded-lg',
+    classname
+  )}>
+    <ReactMarkdown
+      components={{ ...(inline ? inlineComponents : components) }}
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw, rehypeSanitize]}
+    >
+      {children}
+    </ReactMarkdown>
+  </div>
 )
 
 export default MarkdownRenderer

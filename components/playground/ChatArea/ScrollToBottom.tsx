@@ -2,11 +2,10 @@
 
 import type React from "react";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 
 import { Button } from "@/components/ui/button";
-import Icon from "@/components/ui/icon";
 
 const ScrollToBottom: React.FC = () => {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
@@ -21,14 +20,30 @@ const ScrollToBottom: React.FC = () => {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="absolute bottom-4 left-1/2 -translate-x-1/2"
         >
+          {" "}
           <Button
             onClick={() => scrollToBottom()}
             type="button"
             size="icon"
             variant="secondary"
-            className="border-border bg-background text-primary hover:bg-background-secondary border shadow-md transition-shadow duration-300"
+            className="bg-background text-foreground hover:bg-muted border shadow-md transition-all duration-200"
           >
-            <Icon type="arrow-down" size="xs" />
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+            >
+              <path
+                d="M12 5v14m0 0l-6-6m6 6l6-6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </Button>
         </motion.div>
       )}

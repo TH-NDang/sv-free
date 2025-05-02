@@ -1,23 +1,22 @@
 "use client";
-import { Button } from "@/components/ui/button";
 import { AgentSelector } from "@/components/playground/Sidebar/AgentSelector";
-import useChatActions from "@/hooks/useChatActions";
-import { usePlaygroundStore } from "@/store";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
-import { getProviderIcon } from "@/lib/modelProvider";
-import Sessions from "./Sessions";
-import { isValidUrl } from "@/lib/utils";
-import { toast } from "sonner";
-import { useQueryState } from "nuqs";
-import { truncateText } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-const ENDPOINT_PLACEHOLDER = "NO ENDPOINT ADDED";
+import useChatActions from "@/hooks/useChatActions";
+import { getProviderIcon } from "@/lib/modelProvider";
+import { isValidUrl, truncateText } from "@/lib/utils";
+import { usePlaygroundStore } from "@/store";
+import { AnimatePresence, motion } from "framer-motion";
+import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import Sessions from "./Sessions";
+const ENDPOINT_PLACEHOLDER = "No endpoint added";
 const SidebarHeader = () => (
-  <div className="flex items-center gap-2">
-    <Icon type="agno" size="xs" />
-    <span className="text-xs font-medium uppercase text-white">Agent UI</span>
+  <div className="flex items-center gap-2 px-3 py-2">
+    <Icon type="agno" size="sm" />
+    <span className="text-foreground text-sm font-semibold">Agent UI</span>
   </div>
 );
 
@@ -31,16 +30,29 @@ const NewChatButton = ({
   <Button
     onClick={onClick}
     disabled={disabled}
-    size="lg"
-    className="bg-primary text-background hover:bg-primary/80 h-9 w-full rounded-xl text-xs font-medium"
+    className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-9 w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
   >
-    <Icon type="plus-icon" size="xs" className="text-background" />
-    <span className="uppercase">New Chat</span>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 5V19M5 12H19"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    <span>New Chat</span>
   </Button>
 );
 
 const ModelDisplay = ({ model }: { model: string }) => (
-  <div className="border-primary/15 bg-accent text-muted flex h-9 w-full items-center gap-3 rounded-xl border p-3 text-xs font-medium uppercase">
+  <div className="border-border bg-muted/40 text-muted-foreground flex h-9 w-full items-center gap-2 rounded-md border px-3 py-2 text-sm">
     {(() => {
       const icon = getProviderIcon(model);
       return icon ? <Icon type={icon} className="shrink-0" size="xs" /> : null;
@@ -113,15 +125,18 @@ const Endpoint = () => {
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <div className="text-primary text-xs font-medium uppercase">Endpoint</div>
+      <div className="text-foreground text-xs font-medium uppercase">
+        Endpoint
+      </div>
       {isEditing ? (
         <div className="flex w-full items-center gap-1">
+          {" "}
           <input
             type="text"
             value={endpointValue}
             onChange={(e) => setEndpointValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="border-primary/15 bg-accent text-muted flex h-9 w-full items-center text-ellipsis rounded-xl border p-3 text-xs font-medium"
+            className="border-border bg-background text-foreground focus-visible:ring-ring h-9 w-full rounded-md border p-3 text-sm focus-visible:outline-none focus-visible:ring-1"
           />
           <Button
             variant="ghost"
@@ -134,8 +149,9 @@ const Endpoint = () => {
         </div>
       ) : (
         <div className="flex w-full items-center gap-1">
+          {" "}
           <motion.div
-            className="border-primary/15 bg-accent relative flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border p-3 uppercase"
+            className="border-border bg-muted relative flex h-9 w-full cursor-pointer items-center justify-between rounded-md border p-3 uppercase"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
             onClick={() => setIsEditing(true)}
@@ -151,7 +167,8 @@ const Endpoint = () => {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <p className="text-primary flex items-center gap-2 whitespace-nowrap text-xs font-medium">
+                  {" "}
+                  <p className="text-foreground flex items-center gap-2 whitespace-nowrap text-sm font-medium">
                     <Icon type="edit" size="xxs" /> EDIT ENDPOINT
                   </p>
                 </motion.div>
@@ -164,7 +181,8 @@ const Endpoint = () => {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <p className="text-muted text-xs font-medium">
+                  {" "}
+                  <p className="text-foreground text-sm">
                     {isMounted
                       ? truncateText(selectedEndpoint, 21) ||
                         ENDPOINT_PLACEHOLDER
@@ -221,7 +239,7 @@ const Sidebar = () => {
   };
   return (
     <motion.aside
-      className="font-dmmono relative flex h-screen shrink-0 grow-0 flex-col overflow-hidden px-2 py-3"
+      className="bg-background relative flex h-screen shrink-0 grow-0 flex-col overflow-hidden px-2 py-3"
       initial={{ width: "16rem" }}
       animate={{ width: isCollapsed ? "2.5rem" : "16rem" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -264,13 +282,14 @@ const Sidebar = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, ease: "easeInOut" }}
                 >
-                  <div className="text-primary text-xs font-medium uppercase">
+                  {" "}
+                  <div className="text-foreground text-xs font-medium uppercase">
                     Agent
                   </div>
                   {isEndpointLoading ? (
                     <div className="flex w-full flex-col gap-2">
                       {["agent-skeleton", "model-skeleton"].map((id) => (
-                        <Skeleton key={id} className="h-9 w-full rounded-xl" />
+                        <Skeleton key={id} className="h-9 w-full rounded-md" />
                       ))}
                     </div>
                   ) : (

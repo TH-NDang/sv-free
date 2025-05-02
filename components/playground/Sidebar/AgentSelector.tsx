@@ -1,18 +1,17 @@
 "use client";
 
-import * as React from "react";
+import Icon from "@/components/ui/icon";
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+import useChatActions from "@/hooks/useChatActions";
 import { usePlaygroundStore } from "@/store";
 import { useQueryState } from "nuqs";
-import Icon from "@/components/ui/icon";
 import { useEffect } from "react";
-import useChatActions from "@/hooks/useChatActions";
 
 export function AgentSelector() {
   const { agents, setMessages, setSelectedModel, setHasStorage } =
@@ -59,26 +58,27 @@ export function AgentSelector() {
       value={agentId || ""}
       onValueChange={(value) => handleOnValueChange(value)}
     >
-      <SelectTrigger className="border-primary/15 bg-primaryAccent h-9 w-full rounded-xl border text-xs font-medium uppercase">
+      {" "}
+      <SelectTrigger className="border-border bg-background h-9 w-full rounded-md border text-sm font-medium">
         <SelectValue placeholder="Select Agent" />
       </SelectTrigger>
-      <SelectContent className="bg-primaryAccent font-dmmono border-none shadow-lg">
+      <SelectContent className="bg-popover border-border font-sans shadow-lg">
         {agents.map((agent, index) => (
           <SelectItem
             className="cursor-pointer"
             key={`${agent.value}-${index}`}
             value={agent.value}
           >
-            <div className="flex items-center gap-3 text-xs font-medium uppercase">
+            <div className="flex items-center gap-2 text-sm">
               <Icon type={"agent"} size="xs" />
               {agent.label}
             </div>
           </SelectItem>
-        ))}
+        ))}{" "}
         {agents.length === 0 && (
           <SelectItem
             value="no-agents"
-            className="cursor-not-allowed select-none text-center"
+            className="text-muted-foreground cursor-not-allowed select-none text-center"
           >
             No agents found
           </SelectItem>

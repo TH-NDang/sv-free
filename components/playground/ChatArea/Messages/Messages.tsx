@@ -1,18 +1,17 @@
 import type { PlaygroundChatMessage } from "@/types/playground";
 
-import { AgentMessage, UserMessage } from "./MessageItem";
-import { memo } from "react";
-import type {
-  ToolCallProps,
-  ReasoningStepProps,
-  ReasoningProps,
-  ReferenceData,
-  Reference,
-} from "@/types/playground";
-import React, { type FC } from "react";
-import ChatBlankState from "./ChatBlankState";
 import Icon from "@/components/ui/icon";
 import Tooltip from "@/components/ui/tooltip/CustomTooltip";
+import type {
+  ReasoningProps,
+  ReasoningStepProps,
+  Reference,
+  ReferenceData,
+  ToolCallProps,
+} from "@/types/playground";
+import { memo, type FC } from "react";
+import ChatBlankState from "./ChatBlankState";
+import { AgentMessage, UserMessage } from "./MessageItem";
 
 interface MessageListProps {
   messages: PlaygroundChatMessage[];
@@ -32,9 +31,11 @@ interface ReferenceItemProps {
 }
 
 const ReferenceItem: FC<ReferenceItemProps> = ({ reference }) => (
-  <div className="bg-background-secondary hover:bg-background-secondary/80 relative flex h-[63px] w-[190px] cursor-default flex-col justify-between overflow-hidden rounded-md p-3 transition-colors">
-    <p className="text-primary text-sm font-medium">{reference.name}</p>
-    <p className="text-primary/40 truncate text-xs">{reference.content}</p>
+  <div className="bg-muted/40 hover:bg-muted/70 relative flex h-16 w-[190px] cursor-default flex-col justify-between overflow-hidden rounded-md p-3 transition-colors">
+    <p className="text-foreground text-sm font-medium">{reference.name}</p>
+    <p className="text-muted-foreground truncate text-xs">
+      {reference.content}
+    </p>
   </div>
 );
 
@@ -94,19 +95,31 @@ const AgentMessageWrapper = ({ message }: MessageWrapperProps) => {
         )}
       {message.tool_calls && message.tool_calls.length > 0 && (
         <div className="flex items-center gap-3">
+          {" "}
           <Tooltip
             delayDuration={0}
-            content={<p className="text-accent">Tool Calls</p>}
+            content={<p className="text-accent-foreground">Tool Calls</p>}
             side="top"
           >
-            <Icon
-              type="hammer"
-              className="bg-background-secondary rounded-lg p-1"
-              size="sm"
-              color="secondary"
-            />
+            <div className="bg-muted flex h-6 w-6 items-center justify-center rounded-md">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-foreground"
+              >
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </Tooltip>
-
           <div className="flex flex-wrap gap-2">
             {message.tool_calls.map((toolCall, index) => (
               <ToolComponent
@@ -125,11 +138,11 @@ const AgentMessageWrapper = ({ message }: MessageWrapperProps) => {
   );
 };
 const Reasoning: FC<ReasoningStepProps> = ({ index, stepTitle }) => (
-  <div className="text-secondary flex items-center gap-2">
-    <div className="bg-background-secondary flex h-[20px] items-center rounded-md p-2">
-      <p className="text-xs">STEP {index + 1}</p>
+  <div className="text-foreground flex items-center gap-2">
+    <div className="bg-muted flex h-5 items-center rounded-md px-2">
+      <p className="text-xs font-medium">Step {index + 1}</p>
     </div>
-    <p className="text-xs">{stepTitle}</p>
+    <p className="text-sm">{stepTitle}</p>
   </div>
 );
 const Reasonings: FC<ReasoningProps> = ({ reasoning }) => (
@@ -145,8 +158,8 @@ const Reasonings: FC<ReasoningProps> = ({ reasoning }) => (
 );
 
 const ToolComponent = memo(({ tools }: ToolCallProps) => (
-  <div className="bg-accent cursor-default rounded-full px-2 py-1.5 text-xs">
-    <p className="font-dmmono text-primary/80 uppercase">{tools.tool_name}</p>
+  <div className="bg-muted text-foreground cursor-default rounded-full px-2 py-1.5 text-xs">
+    <p className="font-medium uppercase">{tools.tool_name}</p>
   </div>
 ));
 ToolComponent.displayName = "ToolComponent";

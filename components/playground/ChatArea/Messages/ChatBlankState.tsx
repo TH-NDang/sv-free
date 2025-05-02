@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { motion, Variants } from "framer-motion";
 import Icon from "@/components/ui/icon";
 import { IconType } from "@/components/ui/icon/types";
-import React, { useState } from "react";
+import { motion, Variants } from "framer-motion";
+import Link from "next/link";
+import { useState } from "react";
 
 const EXTERNAL_LINKS = {
   documentation: "https://agno.link/agent-ui",
@@ -43,17 +43,17 @@ interface ActionButtonProps {
 }
 
 const ActionButton = ({ href, variant, text }: ActionButtonProps) => {
-  const baseStyles =
-    "px-4 py-2 text-sm transition-colors font-dmmono tracking-tight";
+  const baseStyles = "px-4 py-2 text-sm transition-colors font-medium";
   const variantStyles = {
-    primary: "border border-border hover:bg-neutral-800 rounded-xl",
+    primary:
+      "bg-primary text-primary-foreground hover:bg-primary/90 rounded-md",
   };
 
   return (
     <Link
       href={href}
       target="_blank"
-      className={`${baseStyles} ${variant ? variantStyles[variant] : ""}`}
+      className={`${baseStyles} ${variant ? variantStyles[variant] : "text-foreground hover:underline"}`}
     >
       {text}
     </Link>

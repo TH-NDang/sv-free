@@ -3,10 +3,11 @@ import {
   Database,
   FileText,
   HomeIcon,
+  LayoutDashboard,
   Library,
+  MessageSquare,
   SearchIcon,
   Users,
-  LayoutDashboard,
 } from "lucide-react";
 
 export const nav = {
@@ -15,6 +16,11 @@ export const nav = {
       title: "Home",
       url: "/",
       icon: HomeIcon,
+    },
+    {
+      title: "Chat",
+      url: "/chat",
+      icon: MessageSquare,
     },
     {
       title: "Advanced Search",

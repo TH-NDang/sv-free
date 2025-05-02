@@ -1,13 +1,12 @@
 "use client";
 import { ChatArea } from "@/components/playground/ChatArea";
-import Sidebar from "@/components/playground/Sidebar/Sidebar";
 import { Suspense } from "react";
 
-export default function Home() {
+export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-[calc(100vh-var(--header-height))] items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <div className="text-muted-foreground animate-spin">
               <svg
@@ -80,8 +79,7 @@ export default function Home() {
         </div>
       }
     >
-      <div className="bg-background flex h-screen">
-        <Sidebar />
+      <div className="bg-background flex h-[calc(100vh-var(--header-height))] flex-1 overflow-hidden">
         <ChatArea />
       </div>
     </Suspense>

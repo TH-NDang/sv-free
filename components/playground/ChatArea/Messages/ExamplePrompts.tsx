@@ -101,14 +101,14 @@ const ExamplePrompts = () => {
         ) : (
           <div className="flex flex-col items-center gap-4 text-center">
             <p className="text-muted-foreground">
-              Vui lòng chọn một Agent từ menu bên trái để bắt đầu cuộc trò
+              Vui lòng chọn một Agent từ setting bên trên để bắt đầu cuộc trò
               chuyện
             </p>
             <motion.div
               whileHover={{ rotate: [0, -5, 5, -5, 0] }}
               className="text-4xl"
             >
-              👈
+              👆
             </motion.div>
           </div>
         )}

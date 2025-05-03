@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import useChatActions from "@/hooks/useChatActions";
-import { isValidUrl } from "@/lib/utils";
+import { cn, isValidUrl } from "@/lib/utils";
 import { usePlaygroundStore } from "@/store";
 
 const settingsNav = [
@@ -54,7 +54,7 @@ const settingsNav = [
   { name: "Sessions", icon: History, content: "sessions" },
 ];
 
-export function SettingsDialog() {
+export function SettingsDialog({ className }: { className?: string }) {
   const [open, setOpen] = React.useState(false);
   const [activeMenu, setActiveMenu] = React.useState("endpoint");
   const {
@@ -102,8 +102,14 @@ export function SettingsDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" title="Settings">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("flex items-center gap-1.5", className)}
+          title="Settings"
+        >
           <Cog className="h-4 w-4" />
+          <span className="hidden text-xs sm:inline">Settings</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">

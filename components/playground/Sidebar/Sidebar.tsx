@@ -20,7 +20,7 @@ const SidebarHeader = () => (
   </div>
 );
 
-const NewChatButton = ({
+export const NewChatButton = ({
   disabled,
   onClick,
 }: {
@@ -51,7 +51,7 @@ const NewChatButton = ({
   </Button>
 );
 
-const ModelDisplay = ({ model }: { model: string }) => (
+export const ModelDisplay = ({ model }: { model: string }) => (
   <div className="border-border bg-muted/40 text-muted-foreground flex h-9 w-full items-center gap-2 rounded-md border px-3 py-2 text-sm">
     {(() => {
       const icon = getProviderIcon(model);
@@ -61,7 +61,7 @@ const ModelDisplay = ({ model }: { model: string }) => (
   </div>
 );
 
-const Endpoint = () => {
+export const Endpoint = () => {
   const {
     selectedEndpoint,
     isEndpointActive,

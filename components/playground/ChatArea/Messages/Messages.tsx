@@ -10,7 +10,7 @@ import type {
   ToolCallProps,
 } from "@/types/playground";
 import { memo, type FC } from "react";
-import ChatBlankState from "./ChatBlankState";
+import ExamplePrompts from "./ExamplePrompts";
 import { AgentMessage, UserMessage } from "./MessageItem";
 
 interface MessageListProps {
@@ -165,7 +165,7 @@ const ToolComponent = memo(({ tools }: ToolCallProps) => (
 ToolComponent.displayName = "ToolComponent";
 const Messages = ({ messages }: MessageListProps) => {
   if (messages.length === 0) {
-    return <ChatBlankState />;
+    return <ExamplePrompts />;
   }
 
   return (

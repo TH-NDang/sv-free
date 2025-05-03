@@ -23,7 +23,6 @@ export function AgentSelector() {
   });
   const [, setSessionId] = useQueryState("session");
 
-  // Set the model when the component mounts if an agent is already selected
   useEffect(() => {
     if (agentId && agents.length > 0) {
       const agent = agents.find((agent) => agent.value === agentId);

@@ -5,22 +5,32 @@ import useAIChatStreamHandler from "@/hooks/useAIStreamHandler";
 import { usePlaygroundStore } from "@/store";
 import { SendIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const ChatInput = () => {
-  const { chatInputRef } = usePlaygroundStore();
+  const { chatInputRef, setInputMessage: setGlobalInputMessage } =
+    usePlaygroundStore();
+
+  const globalInputMessage = usePlaygroundStore((state) => state.inputMessage);
 
   const { handleStreamResponse } = useAIChatStreamHandler();
   const [selectedAgent] = useQueryState("agent");
   const [inputMessage, setInputMessage] = useState("");
   const isStreaming = usePlaygroundStore((state) => state.isStreaming);
 
+  useEffect(() => {
+    if (globalInputMessage !== inputMessage) {
+      setInputMessage(globalInputMessage);
+    }
+  }, [globalInputMessage, inputMessage]);
   const handleSubmit = async () => {
     if (!inputMessage.trim()) return;
 
     const currentMessage = inputMessage;
+
     setInputMessage("");
+    setGlobalInputMessage("");
 
     try {
       await handleStreamResponse(currentMessage);
@@ -42,7 +52,11 @@ const ChatInput = () => {
             : "Select an agent to start chatting"
         }
         value={inputMessage}
-        onChange={(e) => setInputMessage(e.target.value)}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          setInputMessage(newValue);
+          setGlobalInputMessage(newValue);
+        }}
         onKeyDown={(e) => {
           if (
             e.key === "Enter" &&

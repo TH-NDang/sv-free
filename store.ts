@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 import {
   type PlaygroundChatMessage,
@@ -18,6 +18,8 @@ interface Agent {
 interface PlaygroundStore {
   hydrated: boolean;
   setHydrated: () => void;
+  inputMessage: string;
+  setInputMessage: (inputMessage: string) => void;
   streamingErrorMessage: string;
   setStreamingErrorMessage: (streamingErrorMessage: string) => void;
   endpoints: {
@@ -66,6 +68,8 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     (set) => ({
       hydrated: false,
       setHydrated: () => set({ hydrated: true }),
+      inputMessage: "",
+      setInputMessage: (inputMessage) => set(() => ({ inputMessage })),
       streamingErrorMessage: "",
       setStreamingErrorMessage: (streamingErrorMessage) =>
         set(() => ({ streamingErrorMessage })),

@@ -3,40 +3,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // Xử lý CORS cho các yêu cầu API
-  if (request.nextUrl.pathname.startsWith("/api/")) {
-    // Xử lý OPTIONS requests (preflight)
-    if (request.method === "OPTIONS") {
-      const response = new NextResponse(null, { status: 204 });
-      response.headers.set("Access-Control-Allow-Origin", "*");
-      response.headers.set(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-      );
-      response.headers.set(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-Requested-With"
-      );
-      response.headers.set("Access-Control-Max-Age", "86400");
-      return response;
-    }
-
-    // Xử lý đặc biệt cho API proxy route
-    if (request.nextUrl.pathname.startsWith("/api/proxy")) {
-      const response = NextResponse.next();
-      response.headers.set("Access-Control-Allow-Origin", "*");
-      response.headers.set(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-      );
-      response.headers.set(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-Requested-With"
-      );
-      return response;
-    }
-  }
-
   const cookies = getSessionCookie(request);
 
   const isLoggedIn = !!cookies;

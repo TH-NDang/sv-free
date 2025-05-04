@@ -5,10 +5,17 @@
  * @returns The response data from the external API
  */
 const PROXY_URL = "/api/proxy";
-export async function proxyFetch(
-  url: string,
-  options?: RequestInit
-): Promise<Response> {
+export async function proxyFetch({
+  url,
+  headers,
+  body,
+  options,
+}: {
+  url: string;
+  headers?: HeadersInit;
+  body?: BodyInit | null;
+  options?: RequestInit;
+}): Promise<Response> {
   try {
     if (!options || options.method === "GET" || !options.method) {
       // Phương thức GET - sử dụng query parameters
@@ -22,10 +29,11 @@ export async function proxyFetch(
     // Các phương thức khác (POST, PUT, DELETE...) - sử dụng POST request
     const response = await fetch(PROXY_URL, {
       method: "POST",
-      headers: {
+      headers: headers || {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        body,
         url,
         options,
       }),

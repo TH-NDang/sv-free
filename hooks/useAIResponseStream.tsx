@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { type RunResponse } from "@/types/playground";
+import { proxyFetch } from "@/lib/proxyFetch";
 
 /**
  * Processes a single JSON chunk by passing it to the provided callback.
@@ -117,10 +118,23 @@ export default function useAIResponseStream() {
       let buffer = "";
 
       try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
+        // const response = await fetch(apiUrl, {
+        //   method: "POST",
+        //   headers: {
+        //     // Set content-type only for non-FormData requests.
+        //     ...(!(requestBody instanceof FormData) && {
+        //       "Content-Type": "application/json",
+        //     }),
+        //     ...headers,
+        //   },
+        //   body:
+        //     requestBody instanceof FormData
+        //       ? requestBody
+        //       : JSON.stringify(requestBody),
+        // });
+        const response = await proxyFetch({
+          url: apiUrl,
           headers: {
-            // Set content-type only for non-FormData requests.
             ...(!(requestBody instanceof FormData) && {
               "Content-Type": "application/json",
             }),

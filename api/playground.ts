@@ -10,7 +10,12 @@ export const getPlaygroundAgentsAPI = async (
 ): Promise<ComboboxAgent[]> => {
   const url = APIRoutes.GetPlaygroundAgents(endpoint);
   try {
-    const response = await proxyFetch(url, { method: "GET" });
+    const response = await proxyFetch({
+      url,
+      options: {
+        method: "GET",
+      },
+    });
 
     if (!response.ok) {
       toast.error(`Failed to fetch playground agents: ${response.statusText}`);
@@ -35,7 +40,12 @@ export const getPlaygroundAgentsAPI = async (
 
 export const getPlaygroundStatusAPI = async (base: string): Promise<number> => {
   const url = APIRoutes.PlaygroundStatus(base);
-  const response = await proxyFetch(url, { method: "GET" });
+  const response = await proxyFetch({
+    url,
+    options: {
+      method: "GET",
+    },
+  });
 
   return response.status;
 };
@@ -46,8 +56,11 @@ export const getAllPlaygroundSessionsAPI = async (
 ): Promise<SessionEntry[]> => {
   try {
     const url = APIRoutes.GetPlaygroundSessions(base, agentId);
-    const response = await proxyFetch(url, {
-      method: "GET",
+    const response = await proxyFetch({
+      url,
+      options: {
+        method: "GET",
+      },
     });
 
     if (!response.ok) {
@@ -69,8 +82,11 @@ export const getPlaygroundSessionAPI = async (
   sessionId: string
 ) => {
   const url = APIRoutes.GetPlaygroundSession(base, agentId, sessionId);
-  const response = await proxyFetch(url, {
-    method: "GET",
+  const response = await proxyFetch({
+    url,
+    options: {
+      method: "GET",
+    },
   });
 
   return response.json();
@@ -82,7 +98,12 @@ export const deletePlaygroundSessionAPI = async (
   sessionId: string
 ) => {
   const url = APIRoutes.DeletePlaygroundSession(base, agentId, sessionId);
-  const response = await proxyFetch(url, { method: "DELETE" });
+  const response = await proxyFetch({
+    url,
+    options: {
+      method: "DELETE",
+    },
+  });
 
   return response;
 };

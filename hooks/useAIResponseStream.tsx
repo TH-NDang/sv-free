@@ -144,6 +144,9 @@ export default function useAIResponseStream() {
             requestBody instanceof FormData
               ? requestBody
               : JSON.stringify(requestBody),
+          options: {
+            method: "POST",
+          },
         });
 
         if (!response.ok) {

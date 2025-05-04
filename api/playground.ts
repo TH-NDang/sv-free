@@ -16,8 +16,9 @@ export const getPlaygroundAgentsAPI = async (
       toast.error(`Failed to fetch playground agents: ${response.statusText}`);
       return [];
     }
+
     const data = await response.json();
-    // Transform the API response into the expected shape.
+
     const agents: ComboboxAgent[] = data.map((item: Agent) => ({
       value: item.agent_id || "",
       label: item.name || "",
@@ -25,7 +26,8 @@ export const getPlaygroundAgentsAPI = async (
       storage: item.storage || false,
     }));
     return agents;
-  } catch {
+  } catch (error) {
+    console.error("Error fetching playground agents:", error);
     toast.error("Error fetching playground agents");
     return [];
   }

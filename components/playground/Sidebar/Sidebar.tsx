@@ -13,8 +13,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Sessions from "./Sessions";
 
-const ENDPOINT_PLACEHOLDER =
-  process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:7777";
+const ENDPOINT_PLACEHOLDER = "/api/agent-proxy";
 
 const SidebarHeader = () => (
   <div className="flex items-center gap-2 px-3 py-2">

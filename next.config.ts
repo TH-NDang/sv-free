@@ -30,6 +30,14 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  rewrites: async () => {
+    return [
+      {
+        source: "/api/agent-proxy/:path*",
+        destination: `${process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:7777"}/v1/playground/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

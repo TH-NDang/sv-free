@@ -7,11 +7,22 @@ export async function POST(request: NextRequest) {
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
+
+    // Tạo headers mới với Origin và Referer để giúp vượt qua một số kiểm tra CORS
+    const headers = new Headers(options?.headers || {});
+
+    // Chỉ thêm các headers này nếu chưa tồn tại
+    if (!headers.has("Origin")) {
+      headers.set("Origin", new URL(url).origin);
+    }
+
+    if (!headers.has("Referer")) {
+      headers.set("Referer", new URL(url).origin);
+    }
+
     const response = await fetch(url, {
       ...options,
-      headers: {
-        ...options?.headers,
-      },
+      headers,
     });
 
     let data;
@@ -50,7 +61,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(url);
+    // Tạo headers với Origin và Referer để hỗ trợ vượt qua một số kiểm tra CORS
+    const headers = new Headers();
+    headers.set("Origin", new URL(url).origin);
+    headers.set("Referer", new URL(url).origin);
+
+    const response = await fetch(url, { headers });
 
     let data;
     const contentType = response.headers.get("content-type") || "";

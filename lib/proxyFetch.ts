@@ -17,7 +17,12 @@ export async function proxyFetch<T = unknown>(
   try {
     if (!options || options.method === "GET" || !options.method) {
       // Phương thức GET - sử dụng query parameters
-      const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+      const proxyUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/api/proxy?url=${encodeURIComponent(url)}`
+          : `/api/proxy?url=${encodeURIComponent(url)}`;
+
+      const response = await fetch(proxyUrl);
 
       if (!response.ok) {
         throw new Error(`Proxy request failed with status ${response.status}`);
@@ -27,7 +32,12 @@ export async function proxyFetch<T = unknown>(
     }
 
     // Các phương thức khác (POST, PUT, DELETE...) - sử dụng POST request
-    const response = await fetch("/api/proxy", {
+    const proxyUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/api/proxy`
+        : "/api/proxy";
+
+    const response = await fetch(proxyUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

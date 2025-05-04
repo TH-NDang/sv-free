@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
   experimental: {
     ppr: "incremental",
   },
+  crossOrigin: "anonymous",
 };
 
 export default nextConfig;

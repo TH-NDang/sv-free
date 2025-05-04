@@ -23,20 +23,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     ppr: "incremental",
-    // use by pdf-viewer.tsx
-    turbo: {
-      resolveAlias: {
-        canvas: "./empty-module.ts",
-      },
-    },
-  },
-  rewrites: async () => {
-    return [
-      {
-        source: "/api/agent-proxy/:path*",
-        destination: `${process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:7777"}/v1/playground/:path*`,
-      },
-    ];
   },
 };
 

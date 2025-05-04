@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 
+import { proxyFetch } from "@/lib/proxyFetch";
 import { APIRoutes } from "./routes";
 
 import { Agent, ComboboxAgent, SessionEntry } from "@/types/playground";
@@ -9,7 +10,8 @@ export const getPlaygroundAgentsAPI = async (
 ): Promise<ComboboxAgent[]> => {
   const url = APIRoutes.GetPlaygroundAgents(endpoint);
   try {
-    const response = await fetch(url, { method: "GET" });
+    const response = await proxyFetch(url, { method: "GET" });
+
     if (!response.ok) {
       toast.error(`Failed to fetch playground agents: ${response.statusText}`);
       return [];
@@ -30,9 +32,9 @@ export const getPlaygroundAgentsAPI = async (
 };
 
 export const getPlaygroundStatusAPI = async (base: string): Promise<number> => {
-  const response = await fetch(APIRoutes.PlaygroundStatus(base), {
-    method: "GET",
-  });
+  const url = APIRoutes.PlaygroundStatus(base);
+  const response = await proxyFetch(url, { method: "GET" });
+
   return response.status;
 };
 
@@ -41,12 +43,11 @@ export const getAllPlaygroundSessionsAPI = async (
   agentId: string
 ): Promise<SessionEntry[]> => {
   try {
-    const response = await fetch(
-      APIRoutes.GetPlaygroundSessions(base, agentId),
-      {
-        method: "GET",
-      }
-    );
+    const url = APIRoutes.GetPlaygroundSessions(base, agentId);
+    const response = await proxyFetch(url, {
+      method: "GET",
+    });
+
     if (!response.ok) {
       if (response.status === 404) {
         // Return empty array when storage is not enabled
@@ -65,12 +66,11 @@ export const getPlaygroundSessionAPI = async (
   agentId: string,
   sessionId: string
 ) => {
-  const response = await fetch(
-    APIRoutes.GetPlaygroundSession(base, agentId, sessionId),
-    {
-      method: "GET",
-    }
-  );
+  const url = APIRoutes.GetPlaygroundSession(base, agentId, sessionId);
+  const response = await proxyFetch(url, {
+    method: "GET",
+  });
+
   return response.json();
 };
 
@@ -79,11 +79,8 @@ export const deletePlaygroundSessionAPI = async (
   agentId: string,
   sessionId: string
 ) => {
-  const response = await fetch(
-    APIRoutes.DeletePlaygroundSession(base, agentId, sessionId),
-    {
-      method: "DELETE",
-    }
-  );
+  const url = APIRoutes.DeletePlaygroundSession(base, agentId, sessionId);
+  const response = await proxyFetch(url, { method: "DELETE" });
+
   return response;
 };

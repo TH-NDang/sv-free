@@ -4,7 +4,7 @@ import { Settings } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/app/admin/components/nav-main";
-import { NavSecondary } from "@/app/admin/components/nav-secondary";
+// import { NavSecondary } from "@/app/admin/components/nav-secondary";
 import { NavUtil } from "@/app/admin/components/nav-util";
 import {
   Sidebar,
@@ -39,7 +39,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navAdmin.navMain} />
-        <NavSecondary items={navAdmin.navSecondary} />
+        {/* <NavSecondary items={navAdmin.navSecondary} /> */}
         <NavUtil className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

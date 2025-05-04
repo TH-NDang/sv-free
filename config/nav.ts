@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   Database,
   FileText,
   HomeIcon,
@@ -41,7 +40,7 @@ export const navAdmin = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/admin",
+      url: "/admin/dashboard",
       icon: LayoutDashboard,
     },
     {
@@ -53,11 +52,6 @@ export const navAdmin = {
       title: "Documents",
       url: "/admin/documents",
       icon: FileText,
-    },
-    {
-      title: "Analytics",
-      url: "/admin/analytics",
-      icon: BarChart3,
     },
   ],
   navSecondary: [

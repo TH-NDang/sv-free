@@ -1,3 +1,5 @@
+// Fixed: CORS issue in Next.js with https://github.com/agno-agi/agent-ui repo
+
 import { toast } from "sonner";
 
 import { proxyFetch } from "@/lib/proxyFetch";

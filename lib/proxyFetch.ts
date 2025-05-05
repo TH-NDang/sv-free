@@ -27,7 +27,10 @@ export async function proxyFetch(
       },
       body: JSON.stringify({
         url,
-        options,
+        options: {
+          ...options,
+          body: options?.body instanceof FormData ? {} : options?.body,
+        },
       }),
     });
 

@@ -115,25 +115,22 @@ export default function useAIResponseStream() {
       } = options;
 
       // Buffer to accumulate partial JSON data.
-      let buffer = "";
-
-      // Fixed: CORS issue in Next.js with https://github.com/agno-agi/agent-ui repo
+      let buffer = ""; // Always use proxyFetch to avoid CORS issues
       try {
-        const response =
-          requestBody instanceof FormData
-            ? await fetch(apiUrl, {
-                method: "POST",
-                headers,
-                body: requestBody,
-              })
-            : await proxyFetch(apiUrl, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  ...headers,
-                },
-                body: JSON.stringify(requestBody),
-              });
+        const response = await proxyFetch(apiUrl, {
+          method: "POST",
+          headers: {
+            // If it's not FormData, we need to set the Content-Type
+            ...(!(requestBody instanceof FormData) && {
+              "Content-Type": "application/json",
+            }),
+            ...headers,
+          },
+          body:
+            requestBody instanceof FormData
+              ? requestBody
+              : JSON.stringify(requestBody),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();

@@ -1,30 +1,14 @@
-const PROXY_URL = "/api/proxy";
 /**
- * Performs a fetch request through a proxy server to bypass CORS or other restrictions.
- *
- * For GET requests, the target URL is encoded and passed as a query parameter to the proxy.
- * For other HTTP methods (POST, PUT, DELETE, etc.), the request details are sent in the body
- * of a POST request to the proxy.
- *
- * @param {Object} params - The parameters for the proxy fetch operation
- * @param {string} params.url - The target URL to fetch from
- * @param {HeadersInit} [params.headers] - Optional headers to include in the request
- * @param {BodyInit | null} [params.body] - Optional body for the request
- * @param {RequestInit} [params.options] - Optional fetch options
- * @returns {Promise<Response>} A promise that resolves to the fetch Response
- * @throws {Error} Rethrows any errors that occur during the fetch operation
+ * Utility function to make a request through the Next.js API proxy to avoid CORS issues
+ * @param url The external URL to make a request to
+ * @param options Fetch options (method, headers, body, etc.)
+ * @returns The response data from the external API
  */
-export async function proxyFetch({
-  url,
-  headers,
-  body,
-  options,
-}: {
-  url: string;
-  headers?: HeadersInit;
-  body?: BodyInit | null;
-  options?: RequestInit;
-}): Promise<Response> {
+const PROXY_URL = "/api/proxy";
+export async function proxyFetch(
+  url: string,
+  options?: RequestInit
+): Promise<Response> {
   try {
     if (!options || options.method === "GET" || !options.method) {
       // Phương thức GET - sử dụng query parameters
@@ -38,13 +22,15 @@ export async function proxyFetch({
     // Các phương thức khác (POST, PUT, DELETE...) - sử dụng POST request
     const response = await fetch(PROXY_URL, {
       method: "POST",
-      headers: headers || {
+      headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        body,
         url,
-        options,
+        options: {
+          ...options,
+          body: options?.body instanceof FormData ? {} : options?.body,
+        },
       }),
     });
 

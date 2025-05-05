@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import { type RunResponse } from "@/types/playground";
 import { proxyFetch } from "@/lib/proxyFetch";
+import { type RunResponse } from "@/types/playground";
+import { useCallback } from "react";
 
 /**
  * Processes a single JSON chunk by passing it to the provided callback.
@@ -117,37 +117,23 @@ export default function useAIResponseStream() {
       // Buffer to accumulate partial JSON data.
       let buffer = "";
 
+      // Fixed: CORS issue in Next.js with https://github.com/agno-agi/agent-ui repo
       try {
-        // const response = await fetch(apiUrl, {
-        //   method: "POST",
-        //   headers: {
-        //     // Set content-type only for non-FormData requests.
-        //     ...(!(requestBody instanceof FormData) && {
-        //       "Content-Type": "application/json",
-        //     }),
-        //     ...headers,
-        //   },
-        //   body:
-        //     requestBody instanceof FormData
-        //       ? requestBody
-        //       : JSON.stringify(requestBody),
-        // });
-        const response = await proxyFetch({
-          url: apiUrl,
-          headers: {
-            ...(!(requestBody instanceof FormData) && {
-              "Content-Type": "application/json",
-            }),
-            ...headers,
-          },
-          body:
-            requestBody instanceof FormData
-              ? requestBody
-              : JSON.stringify(requestBody),
-          options: {
-            method: "POST",
-          },
-        });
+        const response =
+          requestBody instanceof FormData
+            ? await fetch(apiUrl, {
+                method: "POST",
+                headers,
+                body: requestBody,
+              })
+            : await proxyFetch(apiUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...headers,
+                },
+                body: JSON.stringify(requestBody),
+              });
 
         if (!response.ok) {
           const errorData = await response.json();

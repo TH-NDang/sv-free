@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { categories, documents, user } from "@/lib/db/schema";
+import { categories, documents, user, reviews } from "@/lib/db/schema";
 import { safeParseInt } from "@/lib/utils/parse";
 import { desc, eq, sql } from "drizzle-orm";
 //  * @param data - Document data
@@ -194,4 +194,66 @@ export async function getTotalStats() {
     totalDownloads: result[0]?.totalDownloads || 0,
     totalViews: result[0]?.totalViews || 0,
   };
+}
+
+//// Lấy danh sách đánh giá theo tài liệu
+export async function getReviewsByDocumentId(documentId: string, options: { page: number; limit: number }) {
+  const { page, limit } = options;
+  const offset = (page - 1) * limit;
+
+  return db
+    .select()
+    .from(reviews)
+    .where(eq(reviews.documentId, documentId))
+    .orderBy(desc(reviews.createdAt)) // Sắp xếp giảm dần theo createdAt
+    .offset(offset)
+    .limit(limit);
+}
+
+export async function getTotalReviewsByDocumentId(documentId: string) {
+  return db
+    .select({ count: sql`COUNT(*)` })
+    .from(reviews)
+    .where(eq(reviews.documentId, documentId))
+    .then((result) => result[0]?.count || 0);
+}
+
+//// Thêm đánh giá
+export async function addReview(data: {
+  documentId: string;
+  userId: string;
+  userName: string;
+  userImage?: string;
+  rating: number;
+  comment?: string;
+}) {
+  const [insertedReview] = await db.insert(reviews).values({
+    ...data, // Spread operator để thêm tất cả các trường từ data
+    id: sql`gen_random_uuid()`, // Generate a UUID for the id field
+  }).returning();
+
+  return insertedReview;
+}
+
+
+export async function updateReviewById(reviewId: string, data: { 
+  rating?: number; 
+  comment?: string; 
+}) {
+  const [updatedReview] = await db
+    .update(reviews)
+    .set(data)
+    .where(eq(reviews.id, reviewId))
+    .returning();
+
+  return updatedReview;
+}
+
+export async function deleteReviewById(reviewId: string) {
+  const [deletedReview] = await db
+    .delete(reviews)
+    .where(eq(reviews.id, reviewId))
+    .returning();
+
+  return deletedReview;
 }

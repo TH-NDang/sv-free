@@ -1,29 +1,18 @@
 "use client";
 
-import {
-  FolderIcon,
-  MenuIcon,
-  PlusIcon,
-  SettingsIcon,
-  Share2Icon,
-  UploadIcon,
-} from "lucide-react";
+import { MenuIcon, UploadIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
-import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { cn } from "@/lib/utils";
 import { nav } from "@/config/nav";
+import { cn } from "@/lib/utils";
 
 // Actions từ header
 const headerActions = [
-  { title: "Add Document", url: "/documents/new", icon: PlusIcon },
-  { title: "Upload File", url: "/documents/upload", icon: UploadIcon },
-  { title: "Share Document", url: "#", icon: Share2Icon },
-  { title: "Create Collection", url: "/collections/new", icon: FolderIcon },
+  { title: "Add Document", url: "/documents/upload", icon: UploadIcon },
 ];
 
 export function MobileNav() {
@@ -33,7 +22,6 @@ export function MobileNav() {
   return (
     <div className="flex md:hidden">
       <div className="flex items-center">
-        {/* Menu Drawer cho thiết bị di động */}
         <Drawer open={open} onOpenChange={setOpen} direction="left">
           <DrawerTrigger asChild>
             <Button variant="ghost" size="icon" className="mr-1">
@@ -43,16 +31,20 @@ export function MobileNav() {
           </DrawerTrigger>
           <DrawerContent className="left-0 right-auto h-[100dvh] w-[85vw] max-w-[320px] p-0">
             <div className="flex h-full flex-col">
-              <div className="flex h-14 items-center border-b px-4">
+              <div className="flex h-14 items-center justify-between border-b px-4">
                 <span className="font-medium">Document Library</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setOpen(false)}
+                >
+                  <XIcon className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
               </div>
 
               <div className="flex-1 overflow-auto">
-                <div className="p-4">
-                  <SearchForm />
-                </div>
-
-                {/* Main Navigation */}
                 <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
                   Discovery
                 </div>
@@ -117,34 +109,6 @@ export function MobileNav() {
                         {item.title}
                       </MobileLink>
                     ))}
-                  </div>
-                </div>
-
-                {/* Help & Support */}
-                <div className="mb-6 mt-4">
-                  <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
-                    Help & Support
-                  </div>
-                  <div className="px-1 py-1">
-                    {nav.navProfile.map((item) => (
-                      <MobileLink
-                        key={item.url}
-                        href={item.url}
-                        onOpenChange={setOpen}
-                        className="hover:bg-muted/30 flex items-center gap-3 rounded-md px-3 py-2"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.title}
-                      </MobileLink>
-                    ))}
-                    <MobileLink
-                      href="/settings"
-                      onOpenChange={setOpen}
-                      className="hover:bg-muted/30 flex items-center gap-3 rounded-md px-3 py-2"
-                    >
-                      <SettingsIcon className="h-4 w-4" />
-                      Settings
-                    </MobileLink>
                   </div>
                 </div>
               </div>

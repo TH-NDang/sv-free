@@ -5,6 +5,7 @@ import { AuthUIProvider } from "@daveyplate/better-auth-ui";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import QueryProvider from "./query-provider";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -32,7 +33,9 @@ export function Providers({ children }: { children: ReactNode }) {
       // }}
       settingsURL="/settings"
     >
-      <QueryProvider>{children}</QueryProvider>
+      <NuqsAdapter>
+        <QueryProvider>{children}</QueryProvider>
+      </NuqsAdapter>
     </AuthUIProvider>
   );
 }

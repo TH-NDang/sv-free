@@ -175,7 +175,7 @@ function DocumentMetadataForm({
 export function FileUpload({
   onFileUploaded,
   acceptedFileTypes = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip",
-  maxSizeMB = 10,
+  maxSizeMB = 20,
   bucketName = "documents",
   redirectAfterUpload = false,
   path,

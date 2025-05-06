@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "./StatusBadge";
-import { User } from "../analytics/types";
+import { User } from "../dashboard/types";
 
 export function UsersTable({ users }: { users: User[] }) {
   return (

@@ -1,12 +1,12 @@
 import {
-  BarChart3,
   Database,
   FileText,
   HomeIcon,
+  LayoutDashboard,
   Library,
+  MessageSquare,
   SearchIcon,
   Users,
-  LayoutDashboard,
 } from "lucide-react";
 
 export const nav = {
@@ -15,6 +15,11 @@ export const nav = {
       title: "Home",
       url: "/",
       icon: HomeIcon,
+    },
+    {
+      title: "Chat",
+      url: "/chat",
+      icon: MessageSquare,
     },
     {
       title: "Advanced Search",
@@ -35,7 +40,7 @@ export const navAdmin = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/admin",
+      url: "/admin/dashboard",
       icon: LayoutDashboard,
     },
     {
@@ -47,11 +52,6 @@ export const navAdmin = {
       title: "Documents",
       url: "/admin/documents",
       icon: FileText,
-    },
-    {
-      title: "Analytics",
-      url: "/admin/analytics",
-      icon: BarChart3,
     },
   ],
   navSecondary: [

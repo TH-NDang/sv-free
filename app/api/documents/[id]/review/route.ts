@@ -7,10 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  params: Promise<{ id: string }>
 ) {
   try {
-    const { id: documentId } = await context.params;
+    const { id: documentId } = await params;
 
     if (!documentId) {
       return NextResponse.json(
@@ -45,10 +45,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } }
+  params: Promise<{ id: string }>
 ) {
   try {
-    const { id: documentId } = await context.params;
+    const { id: documentId } = await params;
 
     if (!documentId) {
       return NextResponse.json(

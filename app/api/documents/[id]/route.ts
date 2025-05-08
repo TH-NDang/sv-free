@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  params: Promise<{ id: string }>
 ) {
   try {
-    const documentId = (await params).id;
+    const { id: documentId } = await params;
     if (!documentId) {
       return NextResponse.json(
         { error: "Invalid document ID" },

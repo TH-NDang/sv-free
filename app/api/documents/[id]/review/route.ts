@@ -1,4 +1,8 @@
-import { getReviewsByDocumentId,addReview, getTotalReviewsByDocumentId , updateReviewById, deleteReviewById} from "@/lib/db/new_queries";
+import {
+  getReviewsByDocumentId,
+  addReview,
+  getTotalReviewsByDocumentId,
+} from "@/lib/db/new_queries";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -38,49 +42,48 @@ export async function GET(
     );
   }
 }
-  
+
 export async function POST(
-    request: NextRequest,
-    context: { params: { id: string } }
-  ) {
-    try {
-      const { id: documentId } = await context.params;
-  
-      if (!documentId) {
-        return NextResponse.json(
-          { error: "Invalid document ID" },
-          { status: 400 }
-        );
-      }
-  
-      const body = await request.json();
-      const { userId, rating, comment } = body;
-  
-      if (!userId || !rating) {
-        return NextResponse.json(
-          { error: "Missing required fields: userId or rating" },
-          { status: 400 }
-        );
-      }
-  
-      const newReview = await addReview({
-        documentId,
-          userId : body.userId,
-          userName: body.userName,
-        userImage: body.userImage,
-        rating,
-        comment,
-      });
-  
-      return NextResponse.json(newReview, { status: 201 });
-    } catch (error) {
-      console.error("Error adding review:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  try {
+    const { id: documentId } = await context.params;
+
+    if (!documentId) {
       return NextResponse.json(
-        { error: "Cannot add review", message: errorMessage },
-        { status: 500 }
+        { error: "Invalid document ID" },
+        { status: 400 }
       );
     }
+
+    const body = await request.json();
+    const { userId, rating, comment } = body;
+
+    if (!userId || !rating) {
+      return NextResponse.json(
+        { error: "Missing required fields: userId or rating" },
+        { status: 400 }
+      );
+    }
+
+    const newReview = await addReview({
+      documentId,
+      userId: body.userId,
+      userName: body.userName,
+      userImage: body.userImage,
+      rating,
+      comment,
+    });
+
+    return NextResponse.json(newReview, { status: 201 });
+  } catch (error) {
+    console.error("Error adding review:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { error: "Cannot add review", message: errorMessage },
+      { status: 500 }
+    );
+  }
 }
-  

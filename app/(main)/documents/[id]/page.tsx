@@ -13,7 +13,7 @@ import {
   UserIcon,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { FormEvent, Key, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { DocumentViewer } from "@/components/document-viewer";
@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentWithDetails } from "@/lib/db/queries";
 import { formatFileSize, getDisplayExtension } from "@/lib/utils";
+import type { Review } from "@/lib/db/schema";
 
 type FetchedDocument = DocumentWithDetails & {
   fileUrl: string | null;
@@ -142,18 +143,14 @@ export default function DocumentDetailPage() {
   const document = documentDataArray?.[0];
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-
 
   const {
     data: user,
     isLoading: userLoading,
     isError: userError,
   } = useUserSession();
-
-  if (userLoading) return <p>Đang tải thông tin người dùng...</p>;
-  if (userError) return <p>Không thể lấy thông tin người dùng.</p>;
 
   console.log("User session:", user);
 
@@ -230,7 +227,7 @@ export default function DocumentDetailPage() {
         }
         const data = await response.json();
         setReviews((prev) => [...prev, ...data.reviews]);
-      } catch (error) {
+      } catch {
         toast.error("Đã xảy ra lỗi khi tải đánh giá.");
       } finally {
         setIsFetchingMore(false);
@@ -238,7 +235,7 @@ export default function DocumentDetailPage() {
     };
 
     fetchReviews();
-  }, [currentPage, documentId]);
+  }, [currentPage, documentId, isFetchingMore]);
 
   useEffect(() => {
     if (isError && error) {
@@ -255,6 +252,9 @@ export default function DocumentDetailPage() {
       console.warn("Document fetch returned an empty array.");
     }
   }, [isError, error, isLoading, documentDataArray]);
+
+  if (userLoading) return <p>Đang tải thông tin người dùng...</p>;
+  if (userError) return <p>Không thể lấy thông tin người dùng.</p>;
 
   if (isLoading) {
     return <DocumentDetailSkeleton />;
@@ -278,13 +278,13 @@ export default function DocumentDetailPage() {
     );
   }
 
-  const handleEditReview = (review: any) => {
+  const handleEditReview = (review: Review) => {
     setComment(review.comment || ""); // Đặt nội dung vào textarea
     setCurrentRating(review.rating || 0); // Đặt rating
     setEditingReviewId(review.id); // Lưu ID của đánh giá đang chỉnh sửa
   };
 
-  const handleDeleteReview = async (review: any) => {
+  const handleDeleteReview = async (review: Review) => {
     if (confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) {
       try {
         await fetch(`/api/documents/${documentId}/review/${review.id}`, {
@@ -292,7 +292,7 @@ export default function DocumentDetailPage() {
         });
         toast.success("Xóa đánh giá thành công!");
         queryClient.invalidateQueries({ queryKey: ["document", documentId] });
-      } catch (error) {
+      } catch {
         toast.error("Đã xảy ra lỗi khi xóa đánh giá.");
       }
     }
@@ -320,7 +320,7 @@ export default function DocumentDetailPage() {
       setEditingReviewId(null); // Đặt lại trạng thái chỉnh sửa
       setComment(""); // Reset comment
       setCurrentRating(0); // Reset rating
-    } catch (error) {
+    } catch {
       toast.error("Đã xảy ra lỗi khi cập nhật đánh giá.");
     }
   };
@@ -526,144 +526,130 @@ export default function DocumentDetailPage() {
                 <div>
                   <div className="space-y-4">
                     {reviews?.length ? (
-                      reviews.map(
-                        (
-                          review: {
-                            id: string;
-                            userId: string | null | undefined;
-                            userName: string | null | undefined;
-                            userImage: string | null | undefined;
-                            rating: number | null | undefined;
-                            comment: string | null | undefined;
-                            createdAt: string | null | undefined;
-                          },
-                          index: Key | null | undefined
-                        ) => (
-                          <div key={index} className="border-b pb-4">
-                            {editingReviewId === review.id ? (
-                              // Hiển thị form sửa nếu đang chỉnh sửa
-                              <form
-                                onSubmit={(e) => {
-                                  e.preventDefault();
-                                  handleSaveEdit(review.id);
-                                }}
-                              >
-                                <div className="mb-2">
-                                  <p className="text-muted-foreground mb-2 text-sm">
-                                    Sửa đánh giá:
-                                  </p>
-                                  <div className="flex items-center gap-1">
-                                    {Array.from({ length: 5 }, (_, i) => (
-                                      <label key={i}>
-                                        <input
-                                          type="radio"
-                                          name="rating"
-                                          value={i + 1}
-                                          className="hidden"
-                                          checked={currentRating === i + 1}
-                                          onChange={() =>
-                                            setCurrentRating(i + 1)
-                                          }
-                                        />
-                                        <StarIcon
-                                          className={`h-5 w-5 cursor-pointer transition-transform duration-200 ${
-                                            i < currentRating
-                                              ? "scale-110 text-yellow-500"
-                                              : "text-muted-foreground"
-                                          }`}
-                                          onClick={() =>
-                                            setCurrentRating(i + 1)
-                                          }
-                                        />
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                                <textarea
-                                  name="comment"
-                                  rows={3}
-                                  className="w-full rounded-md border p-2 text-sm"
-                                  placeholder="Nhập bình luận của bạn..."
-                                  value={comment}
-                                  onChange={(e) => setComment(e.target.value)}
-                                />
-                                <div className="mt-2 flex gap-2">
-                                  <Button
-                                    type="submit"
-                                    variant="outline"
-                                    size="sm"
-                                  >
-                                    Lưu
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => setEditingReviewId(null)}
-                                  >
-                                    Hủy
-                                  </Button>
-                                </div>
-                              </form>
-                            ) : (
-                              // Hiển thị nội dung đánh giá nếu không chỉnh sửa
-                              <>
-                                <p className="mt-2 flex items-center gap-2 text-sm font-medium">
-                                  {review.userName ||
-                                    "Người dùng không xác định"}
-                                  {review.userImage && (
-                                    <img
-                                      src={review.userImage}
-                                      alt="User Avatar"
-                                      className="ml-2 h-6 w-6 rounded-full"
-                                    />
-                                  )}
+                      reviews.map((review, index) => (
+                        <div key={index} className="border-b pb-4">
+                          {editingReviewId === review.id ? (
+                            // Hiển thị form sửa nếu đang chỉnh sửa
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSaveEdit(review.id);
+                              }}
+                            >
+                              <div className="mb-2">
+                                <p className="text-muted-foreground mb-2 text-sm">
+                                  Sửa đánh giá:
                                 </p>
-                                <div className="mt-1.5 flex items-center gap-2">
+                                <div className="flex items-center gap-1">
                                   {Array.from({ length: 5 }, (_, i) => (
-                                    <StarIcon
-                                      key={i}
-                                      className={`h-2 w-2 ${
-                                        i < (review.rating ?? 0)
-                                          ? "text-yellow-500"
-                                          : "text-muted-foreground"
-                                      }`}
-                                    />
+                                    <label key={i}>
+                                      <input
+                                        type="radio"
+                                        name="rating"
+                                        value={i + 1}
+                                        className="hidden"
+                                        checked={currentRating === i + 1}
+                                        onChange={() => setCurrentRating(i + 1)}
+                                      />
+                                      <StarIcon
+                                        className={`h-5 w-5 cursor-pointer transition-transform duration-200 ${
+                                          i < currentRating
+                                            ? "scale-110 text-yellow-500"
+                                            : "text-muted-foreground"
+                                        }`}
+                                        onClick={() => setCurrentRating(i + 1)}
+                                      />
+                                    </label>
                                   ))}
-                                  <p className="text-muted-foreground mt-0.5 text-sm">
-                                    {review.createdAt &&
-                                      new Date(
-                                        review.createdAt
-                                      ).toLocaleDateString("vi-VN")}
-                                  </p>
                                 </div>
-                                <p className="text-muted-foreground mt-1 text-sm">
-                                  {review.comment}
-                                </p>
-
-                                {/* Hiển thị nút "Sửa" và "Xóa" nếu là đánh giá của người dùng */}
-                                {review.userId === user?.user?.id && (
-                                  <div className="mt-2 flex gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEditReview(review)}
-                                    >
-                                      Sửa
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleDeleteReview(review)}
-                                    >
-                                      Xóa
-                                    </Button>
-                                  </div>
+                              </div>
+                              <textarea
+                                name="comment"
+                                rows={3}
+                                className="w-full rounded-md border p-2 text-sm"
+                                placeholder="Nhập bình luận của bạn..."
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                              />
+                              <div className="mt-2 flex gap-2">
+                                <Button
+                                  type="submit"
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Lưu
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => setEditingReviewId(null)}
+                                >
+                                  Hủy
+                                </Button>
+                              </div>
+                            </form>
+                          ) : (
+                            // Hiển thị nội dung đánh giá nếu không chỉnh sửa
+                            <>
+                              <p className="mt-2 flex items-center gap-2 text-sm font-medium">
+                                {review.userName || "Người dùng không xác định"}
+                                {review.userImage && (
+                                  <img
+                                    src={review.userImage}
+                                    alt="User Avatar"
+                                    className="ml-2 h-6 w-6 rounded-full"
+                                  />
                                 )}
-                              </>
-                            )}
-                          </div>
-                        )
-                      )
+                              </p>
+                              <div className="mt-1.5 flex items-center gap-2">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <StarIcon
+                                    key={i}
+                                    className={`h-2 w-2 ${
+                                      i < (review.rating ?? 0)
+                                        ? "text-yellow-500"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  />
+                                ))}
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                  {review.createdAt &&
+                                    new Date(
+                                      review.createdAt
+                                    ).toLocaleDateString("vi-VN")}
+                                </p>
+                              </div>
+                              <p className="text-muted-foreground mt-1 text-sm">
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                  {review.createdAt &&
+                                    (review.createdAt instanceof Date
+                                      ? review.createdAt.toLocaleDateString(
+                                          "vi-VN"
+                                        )
+                                      : new Date(
+                                          review.createdAt
+                                        ).toLocaleDateString("vi-VN"))}
+                                </p>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditReview(review)}
+                                >
+                                  Sửa
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteReview(review)}
+                                >
+                                  Xóa
+                                </Button>
+                              </p>
+                              )
+                            </>
+                          )}
+                        </div>
+                      ))
                     ) : (
                       <p className="text-muted-foreground text-sm italic">
                         Chưa có đánh giá hoặc bình luận nào.

@@ -7,7 +7,6 @@ import {
   pgTable,
   text,
   timestamp,
-  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -101,7 +100,7 @@ export const documents = pgTable("documents", {
   originalFilename: text("original_filename").notNull(),
   storagePath: text("storage_path").notNull().unique(),
   fileType: varchar("file_type", { length: 100 }),
-  fileSize: bigint("file_size", { mode: "number" }),//kích thước KB
+  fileSize: bigint("file_size", { mode: "number" }), //kích thước KB
   thumbnailStoragePath: text("thumbnail_storage_path").unique(),
   categoryId: uuid("category_id").references(() => categories.id),
   authorId: text("author_id").references(() => user.id),
@@ -181,7 +180,7 @@ export const reviews = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(), // Thêm cột updatedAt để theo dõi cập nhật
   },
-  (table) => [
+  () => [
     sql`CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5))`, // Đảm bảo rating nằm trong khoảng 1-5 hoặc null
   ]
 );

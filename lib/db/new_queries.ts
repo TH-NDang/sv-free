@@ -197,7 +197,10 @@ export async function getTotalStats() {
 }
 
 //// Lấy danh sách đánh giá theo tài liệu
-export async function getReviewsByDocumentId(documentId: string, options: { page: number; limit: number }) {
+export async function getReviewsByDocumentId(
+  documentId: string,
+  options: { page: number; limit: number }
+) {
   const { page, limit } = options;
   const offset = (page - 1) * limit;
 
@@ -227,19 +230,24 @@ export async function addReview(data: {
   rating: number;
   comment?: string;
 }) {
-  const [insertedReview] = await db.insert(reviews).values({
-    ...data, // Spread operator để thêm tất cả các trường từ data
-    id: sql`gen_random_uuid()`, // Generate a UUID for the id field
-  }).returning();
+  const [insertedReview] = await db
+    .insert(reviews)
+    .values({
+      ...data, // Spread operator để thêm tất cả các trường từ data
+      id: sql`gen_random_uuid()`, // Generate a UUID for the id field
+    })
+    .returning();
 
   return insertedReview;
 }
 
-
-export async function updateReviewById(reviewId: string, data: { 
-  rating?: number; 
-  comment?: string; 
-}) {
+export async function updateReviewById(
+  reviewId: string,
+  data: {
+    rating?: number;
+    comment?: string;
+  }
+) {
   const [updatedReview] = await db
     .update(reviews)
     .set(data)

@@ -3,10 +3,10 @@ import { updateReviewById, deleteReviewById } from "@/lib/db/new_queries";
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string; reviewId: string } }
+  { params }: { params: Promise<{ id: string; reviewId: string }> }
 ) {
   try {
-    const { id: documentId, reviewId } = context.params;
+    const { id: documentId, reviewId } = await params;
     const body = await request.json();
 
     if (!documentId || !reviewId) {
@@ -33,10 +33,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string; reviewId: string } }
+  { params }: { params: Promise<{ id: string; reviewId: string }> }
 ) {
   try {
-    const { id: documentId, reviewId } = context.params;
+    const { id: documentId, reviewId } = await params;
 
     if (!documentId || !reviewId) {
       return NextResponse.json(

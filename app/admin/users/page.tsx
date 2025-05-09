@@ -383,7 +383,7 @@ export default function UsersPage() {
   // Effect for fetching users when pagination or sorting changes
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [pagination.page, pagination.pageSize, sortConfig]);
 
   if (loading) {
     return (

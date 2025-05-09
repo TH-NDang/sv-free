@@ -30,8 +30,8 @@ import { Separator } from "@/components/ui/separator";
 import { useCategorySearch } from "@/hooks/use-category-search";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { type Document } from "@/lib/db/schema";
-import { PdfPreview } from "./pdf-preview";
 import { getMimeType } from "@/lib/utils";
+import { PdfPreview } from "./pdf-preview";
 
 const mimeTypeMap: { [key: string]: string } = {
   pdf: "application/pdf",

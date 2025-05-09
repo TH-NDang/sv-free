@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getAllDocuments } from "@/lib/db/new_queries";
-import { createDocument } from "@/lib/db/queries";
+import { createDocument, getAllDocuments } from "@/lib/db/new_queries";
 import { documentSchema } from "@/lib/db/schema";
 import { getPublicUrl } from "@/lib/supabase/utils";
 import { headers } from "next/headers";

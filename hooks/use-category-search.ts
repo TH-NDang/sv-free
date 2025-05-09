@@ -24,6 +24,13 @@ export interface Category {
   updatedAt: string;
 }
 
+export interface CategoryResponse {
+  categories: Category[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 /**
  * Hook for searching and managing categories
  * Provides functionality for:
@@ -40,15 +47,14 @@ export function useCategorySearch() {
    */
   const fetchCategories = async (): Promise<Option[]> => {
     try {
-      const response = await fetch("/api/categories?limit=50");
+      const response = await fetch("/api/categories?pageSize=50");
 
       if (!response.ok) {
         throw new Error(`Error fetching categories: ${response.statusText}`);
       }
-      const data: Category[] = await response.json();
-
+      const data = await response.json();
       // Transform categories from DB format to Option format
-      return data.map((category) => ({
+      return (data.data || []).map((category: Category) => ({
         value: category.id,
         label: category.name,
         group: "Categories",
@@ -92,10 +98,14 @@ export function useCategorySearch() {
           throw new Error(`Error searching categories: ${response.statusText}`);
         }
 
-        const data: Category[] = await response.json();
+        const data: CategoryResponse = await response.json();
 
+        console.log("Raw API response:", data);
+        console.log("Response type:", typeof data);
+        console.log("Is array?", Array.isArray(data));
+        console.log("data", data.categories);
         // Transform search results to Option format
-        return data.map((category) => ({
+        return data.categories.map((category: Category) => ({
           value: category.id,
           label: category.name,
           group: "Categories",

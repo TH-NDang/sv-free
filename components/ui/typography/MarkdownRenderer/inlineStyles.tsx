@@ -1,30 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useState } from 'react';
 
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from 'next/image';
+import Link from 'next/link';
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils';
 
 import type {
-  UnorderedListProps,
-  OrderedListProps,
-  EmphasizedTextProps,
-  ItalicTextProps,
-  StrongTextProps,
+  AnchorLinkProps,
+  BlockquoteProps,
   BoldTextProps,
   DeletedTextProps,
-  UnderlinedTextProps,
-  HorizontalRuleProps,
-  BlockquoteProps,
-  AnchorLinkProps,
+  EmphasizedTextProps,
   HeadingProps,
+  HorizontalRuleProps,
   ImgProps,
-  ParagraphProps
-} from './types'
+  ItalicTextProps,
+  OrderedListProps,
+  ParagraphProps,
+  StrongTextProps,
+  UnderlinedTextProps,
+  UnorderedListProps
+} from './types';
 
-import { PARAGRAPH_SIZES } from '../Paragraph/constants'
+import { PARAGRAPH_SIZES } from '../Paragraph/constants';
 
 const filterProps = (props: object) => {
   const newProps = { ...props }
@@ -153,22 +153,26 @@ const Img = ({ src, alt }: ImgProps) => {
 
   if (!src) return null
 
+  // Convert src to string if it's a Blob
+  const srcString = typeof src === 'string' ? src : 
+    (src instanceof Blob ? URL.createObjectURL(src) : '');
+
   return (
     <div className="w-full max-w-xl">
       {error ? (
         <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-md bg-secondary/50 text-muted">
           <Paragraph className="text-primary">Image unavailable</Paragraph>
           <Link
-            href={src}
+            href={srcString}
             target="_blank"
             className="max-w-md truncate underline"
           >
-            {src}
+            {typeof src === 'string' ? src : 'View image'}
           </Link>
         </div>
       ) : (
         <Image
-          src={src}
+          src={srcString}
           width={96}
           height={56}
           alt={alt ?? 'Rendered image'}

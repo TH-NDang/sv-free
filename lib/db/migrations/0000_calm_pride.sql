@@ -101,8 +101,7 @@ CREATE TABLE "user" (
 	"role" text,
 	"banned" boolean,
 	"ban_reason" text,
-	"ban_expires" timestamp,
-	CONSTRAINT "user_email_unique" UNIQUE("email")
+	"ban_expires" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "verification" (

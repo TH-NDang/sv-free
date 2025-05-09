@@ -1,9 +1,10 @@
 import { auth } from "@/lib/auth";
-import { createDocument, getDocuments } from "@/lib/db/queries";
+import { getAllDocuments } from "@/lib/db/new_queries";
+import { createDocument } from "@/lib/db/queries";
 import { documentSchema } from "@/lib/db/schema";
+import { getPublicUrl } from "@/lib/supabase/utils";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { getPublicUrl } from "@/lib/supabase/utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,16 +42,13 @@ export async function POST(request: NextRequest) {
     const result = await createDocument(documentData);
 
     // Construct full URLs before returning the response
-    const responseData = await Promise.all([
-      {
-        ...result,
-        fileUrl: await getPublicUrl(result.storagePath, "documents"),
-        thumbnailUrl: await getPublicUrl(
-          result.thumbnailStoragePath,
-          "thumbnails"
-        ),
-      },
-    ]);
+    const responseData = {
+      ...result,
+      fileUrl: await getPublicUrl(result.storagePath, "documents"),
+      thumbnailUrl: result.thumbnailStoragePath
+        ? await getPublicUrl(result.thumbnailStoragePath, "thumbnails")
+        : null,
+    };
 
     return NextResponse.json(responseData, { status: 201 });
   } catch (error) {
@@ -68,54 +66,45 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const categoryId = searchParams.get("category") || undefined;
-    const myUploads = searchParams.get("myUploads") === "true";
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const offset = parseInt(searchParams.get("offset") || "0");
 
-    let authorId: string | undefined = undefined;
+    // Lấy các tham số từ query string
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const searchQuery = searchParams.get("search") || "";
+    const categoryId = searchParams.get("categoryId") || "";
+    const sortBy =
+      (searchParams.get("sortBy") as
+        | "title"
+        | "createdAt"
+        | "downloadCount"
+        | "viewCount") || "createdAt";
+    const sortOrder =
+      (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
+    const published = searchParams.get("published") === "false" ? false : true;
+    // Get session to check access rights
+    // const session = await auth.api.getSession({
+    //   headers: await headers(),
+    // });
+    // if (!session?.user) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
 
-    if (myUploads) {
-      // Get the current user session
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      });
-
-      if (!session) {
-        return NextResponse.json(
-          { error: "You need to be logged in" },
-          { status: 401 }
-        );
-      }
-
-      authorId = session.user.id;
-    }
-
-    // Use the updated getDocuments query
-    const results = await getDocuments({
+    // Gọi hàm truy vấn documents
+    const result = await getAllDocuments({
+      page,
+      pageSize,
+      searchQuery,
       categoryId,
-      authorId,
-      limit,
-      offset,
+      sortBy,
+      sortOrder,
+      published,
     });
 
-    // Construct full URLs for each document
-    const resultsWithUrls = await Promise.all(
-      results.map(async (doc) => ({
-        ...doc,
-        fileUrl: await getPublicUrl(doc.storagePath, "documents"),
-        thumbnailUrl: await getPublicUrl(
-          doc.thumbnailStoragePath,
-          "thumbnails"
-        ),
-      }))
-    );
-
-    return NextResponse.json(resultsWithUrls);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching documents:", error);
     return NextResponse.json(
-      { error: "Cannot fetch documents" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

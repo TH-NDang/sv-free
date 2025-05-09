@@ -12,15 +12,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DocumentWithDetails } from "@/lib/db/queries";
 import { getCategories, getTags } from "@/lib/mock/admin-data";
 // import { getCategories } from "@/lib/db/queries";
 // import { getTags } from "@/lib/db/queries";
 
 interface AdminContentProps {
   tab: string;
-  documents: unknown[];
+  documents: DocumentWithDetails[];
   searchTerm?: string;
-  DocumentsTable: React.ComponentType<{ documents: unknown[] }>;
+  DocumentsTable: React.ComponentType<{ documents: DocumentWithDetails[] }>;
   DocumentsTableSkeleton: React.ComponentType;
 }
 

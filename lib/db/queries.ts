@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { categories, documents, NewDocument, user } from "@/lib/db/schema";
 import { startOfDay, subDays, subMonths, subYears } from "date-fns";
-import { and, asc, desc, eq, gte, ilike, or, SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, like, or, SQL } from "drizzle-orm";
 
 // ==========================================
 // Document Types
@@ -448,3 +448,70 @@ export async function getCategoryBySlug(slug: string) {
 // ==========================================
 // Export all functions
 // ==========================================
+
+export async function getAllDocuments({
+  search,
+  category,
+  page = 1,
+  pageSize = 10,
+}: {
+  search?: string;
+  category?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  try {
+    const offset = (page - 1) * pageSize;
+
+    // Build where conditions
+    const conditions = [];
+    if (search) {
+      conditions.push(like(documents.title, `%${search}%`));
+    }
+    if (category) {
+      conditions.push(eq(documents.categoryId, category));
+    }
+
+    // Get total count
+    const totalCount = await db
+      .select({ count: documents.id })
+      .from(documents)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .then((result) => result.length);
+
+    // Get paginated documents with category
+    const docs = await db
+      .select({
+        id: documents.id,
+        title: documents.title,
+        description: documents.description,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          description: categories.description,
+          createdAt: categories.createdAt,
+          updatedAt: categories.updatedAt,
+        },
+        published: documents.published,
+        downloadCount: documents.downloadCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+      })
+      .from(documents)
+      .leftJoin(categories, eq(documents.categoryId, categories.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(documents.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      documents: docs,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+    };
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    throw error;
+  }
+}

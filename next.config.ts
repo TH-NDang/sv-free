@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
         hostname: "supabasekong-fgcg4kwc44g8k4kskw8k088o.services.wfip.tech",
       },
     ],
+    domains: ["hpnsqntactbgmuvtkrby.supabase.co"],
   },
   experimental: {
     ppr: "incremental",

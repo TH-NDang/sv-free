@@ -23,10 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Category } from "@/lib/db/schema";
 import { useQuery } from "@tanstack/react-query";
 import { saveAs } from "file-saver";
 import { Download, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Toaster, toast } from "sonner";
 import { TopDocument, User } from "./types";
 
@@ -38,11 +45,35 @@ async function fetchAnalyticsData() {
   return response.json();
 }
 
+// Add interfaces
+interface MonthlyStats {
+  month: string;
+  downloads: number;
+  views: number;
+}
+
+interface AnalyticsData {
+  categoryData: Array<{
+    category: Category;
+    documents: number | string;
+  }>;
+  monthlyStats: MonthlyStats[];
+  fileTypeData: Array<{
+    type: string;
+    count: number;
+  }>;
+  topDocuments: TopDocument[];
+  users: User[];
+  newUsers: User[];
+  pendingDocuments: number;
+  totalDownloads: number;
+  totalViews: number;
+}
+
 export default function AnalyticsPage() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<AnalyticsData>({
     queryKey: ["analyticsData"],
     queryFn: fetchAnalyticsData,
-    // onError: () => toast.error("Failed to load analytics data"),
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +81,85 @@ export default function AnalyticsPage() {
   const [timeFilter, setTimeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [docPage, setDocPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
   const itemsPerPage = 5;
+
+  // Memoize filtered data
+  const filteredUsers = useMemo(() => {
+    if (!data?.newUsers) return [];
+    return data.newUsers.filter(
+      (user: User) =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [data?.newUsers, searchTerm]);
+
+  const filteredDocs = useMemo(() => {
+    if (!data?.topDocuments) return [];
+    return data.topDocuments.filter((doc: TopDocument) =>
+      doc.title.toLowerCase().includes(docSearchTerm.toLowerCase())
+    );
+  }, [data?.topDocuments, docSearchTerm]);
+
+  const filteredDocumentData = useMemo(() => {
+    if (!data?.monthlyStats) return [];
+    return data.monthlyStats.filter((monthData: MonthlyStats) => {
+      if (timeFilter === "7days") {
+        const recentMonths = data.monthlyStats.slice(-2);
+        return recentMonths.includes(monthData);
+      }
+      if (timeFilter === "30days") {
+        const recentMonths = data.monthlyStats.slice(-4);
+        return recentMonths.includes(monthData);
+      }
+      return true;
+    });
+  }, [data?.monthlyStats, timeFilter]);
+
+  // Pagination calculations
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const indexOfLastDoc = docPage * itemsPerPage;
+  const indexOfFirstDoc = indexOfLastDoc - itemsPerPage;
+  const currentDocs = filteredDocs.slice(indexOfFirstDoc, indexOfLastDoc);
+  const totalDocPages = Math.ceil(filteredDocs.length / itemsPerPage);
+
+  // Export CSV with loading state
+  const exportCSV = async () => {
+    try {
+      setIsExporting(true);
+      const headers = ["Tiêu đề,Danh mục,Lượt tải xuống,Lượt xem"];
+      const rows =
+        data?.topDocuments.map(
+          (doc: TopDocument) =>
+            `${doc.title},${doc.category},${doc.downloads},${doc.views}`
+        ) || [];
+      const userHeaders = [
+        "Người dùng,Email,Vai trò,Lượt tải lên,Lượt tải xuống",
+      ];
+      const userRows =
+        data?.newUsers.map(
+          (user: User) =>
+            `${user.name},${user.email},${user.role},${user.uploads},${user.downloads}`
+        ) || [];
+      const csvContent = [
+        ...headers,
+        ...rows,
+        "", // Dòng trống để phân tách
+        ...userHeaders,
+        ...userRows,
+      ].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      saveAs(blob, "bao_cao_tai_lieu_va_nguoi_dung.csv");
+      toast.success("Đã xuất báo cáo thành công!");
+    } catch {
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -69,76 +178,22 @@ export default function AnalyticsPage() {
     );
   }
 
+  if (!data) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-muted-foreground">No data available</p>
+      </div>
+    );
+  }
+
   const {
-    categoryData,
-    monthlyStats,
-    fileTypeData,
-    topDocuments,
-    users,
-    newUsers,
-    pendingDocuments,
-    totalDownloads,
-    totalViews,
-  } = data;
-
-  // Logic tìm kiếm và phân trang người dùng
-  const filteredUsers = newUsers.filter(
-    (user: User) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const indexOfLastUser = currentPage * itemsPerPage;
-  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-  const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
-
-  // Logic tìm kiếm và phân trang tài liệu
-  const filteredDocs = topDocuments.filter((doc: TopDocument) =>
-    doc.title.toLowerCase().includes(docSearchTerm.toLowerCase())
-  );
-  const indexOfLastDoc = docPage * itemsPerPage;
-  const indexOfFirstDoc = indexOfLastDoc - itemsPerPage;
-  const currentDocs = filteredDocs.slice(indexOfFirstDoc, indexOfLastDoc);
-  const totalDocPages = Math.ceil(filteredDocs.length / itemsPerPage);
-
-  // Logic lọc theo thời gian
-  const filteredDocumentData = monthlyStats.filter((data: Document) => {
-    if (timeFilter === "7days") {
-      const recentMonths = monthlyStats.slice(-2);
-      return recentMonths.includes(data);
-    }
-    if (timeFilter === "30days") {
-      const recentMonths = monthlyStats.slice(-4);
-      return recentMonths.includes(data);
-    }
-    return true;
-  });
-
-  // Xuất báo cáo CSV
-  const exportCSV = () => {
-    const headers = ["Tiêu đề,Danh mục,Lượt tải xuống,Lượt xem"];
-    const rows = topDocuments.map(
-      (doc: TopDocument) =>
-        `${doc.title},${doc.category},${doc.downloads},${doc.views}`
-    );
-    const userHeaders = [
-      "Người dùng,Email,Vai trò,Lượt tải lên,Lượt tải xuống",
-    ];
-    const userRows = newUsers.map(
-      (user: User) =>
-        `${user.name},${user.email},${user.role},${user.uploads},${user.downloads}`
-    );
-    const csvContent = [
-      ...headers,
-      ...rows,
-      "", // Dòng trống để phân tách
-      ...userHeaders,
-      ...userRows,
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "bao_cao_tai_lieu_va_nguoi_dung.csv");
-    toast.success("Đã xuất báo cáo thành công!");
-  };
+    categoryData = [],
+    fileTypeData = [],
+    users = [],
+    pendingDocuments = 0,
+    totalDownloads = 0,
+    totalViews = 0,
+  } = data || {};
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -150,9 +205,23 @@ export default function AnalyticsPage() {
             Quản lý dữ liệu tài liệu học tập
           </p>
         </div>
-        <Button onClick={exportCSV}>
-          <Download className="mr-2 h-4 w-4" /> Xuất báo cáo
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={exportCSV} disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                {isExporting ? "Đang xuất..." : "Xuất báo cáo"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Xuất báo cáo dưới dạng CSV</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Thẻ thống kê tổng quan */}
@@ -179,7 +248,12 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent>
           {categoryData.length > 0 ? (
-            <BarChartComponent data={categoryData} />
+            <BarChartComponent
+              data={categoryData.map((cat) => ({
+                category: cat.category.name,
+                documents: Number(cat.documents),
+              }))}
+            />
           ) : (
             <p className="text-muted-foreground text-center">
               Không có dữ liệu
@@ -210,7 +284,13 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent>
           {filteredDocumentData.length > 0 ? (
-            <AreaChartComponent data={filteredDocumentData} />
+            <AreaChartComponent
+              data={filteredDocumentData.map((doc) => ({
+                month: doc.month,
+                downloads: doc.downloads,
+                views: doc.views,
+              }))}
+            />
           ) : (
             <p className="text-muted-foreground text-center">
               Không có dữ liệu

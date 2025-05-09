@@ -284,41 +284,36 @@ export default function ProfilePage() {
     authClient.useSession();
   const user = session?.user as User;
 
-  const {
-    data: userDocuments = [],
-    isLoading: isLoadingDocuments,
-    error: documentsError,
-  } = useQuery<FetchedUserDocument[], Error>({
+  const { data: userDocuments = [], isLoading: isLoadingDocuments } = useQuery<
+    FetchedUserDocument[],
+    Error
+  >({
     queryKey: ["userDocuments", user?.id],
     queryFn: fetchUserDocuments,
     staleTime: 5 * 60 * 1000, // Cache for 5 mins
     enabled: !!user,
   });
 
-  const {
-    data: savedDocumentsPlaceholder = [],
-    isLoading: isLoadingSaved,
-    error: savedError,
-  } = useQuery<FetchedUserDocument[], Error>({
-    queryKey: ["savedDocuments", user?.id],
-    queryFn: async () => {
-      // Replace with actual API call to fetch saved/bookmarked docs
-      // Example: const response = await fetch("/api/bookmarks"); return response.json();
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate fetch
-      return userDocuments.slice(0, 2);
-    },
-    staleTime: 5 * 60 * 1000,
-    enabled: !!user && activeTab === "saved", // Fetch only when tab is active
-  });
+  const { data: savedDocumentsPlaceholder = [], isLoading: isLoadingSaved } =
+    useQuery<FetchedUserDocument[], Error>({
+      queryKey: ["savedDocuments", user?.id],
+      queryFn: async () => {
+        // Replace with actual API call to fetch saved/bookmarked docs
+        // Example: const response = await fetch("/api/bookmarks"); return response.json();
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate fetch
+        return userDocuments.slice(0, 2);
+      },
+      staleTime: 5 * 60 * 1000,
+      enabled: !!user && activeTab === "saved", // Fetch only when tab is active
+    });
 
   // Calculate stats
   const userStats = {
-    uploads: userDocuments.length,
-    downloads: userDocuments.reduce(
-      (sum, doc) => sum + (doc.downloadCount || 0),
-      0
-    ),
-    savedDocuments: savedDocumentsPlaceholder.length,
+    uploads: userDocuments?.length || 0,
+    downloads:
+      userDocuments?.reduce((sum, doc) => sum + (doc.downloadCount || 0), 0) ||
+      0,
+    savedDocuments: savedDocumentsPlaceholder?.length || 0,
   };
 
   // Could add a state if session load failed or no user
@@ -361,7 +356,7 @@ export default function ProfilePage() {
           <UploadsTabContent
             documents={userDocuments}
             isLoading={isLoadingDocuments}
-            error={documentsError}
+            error={null}
           />
         </TabsContent>
 
@@ -369,7 +364,7 @@ export default function ProfilePage() {
           <SavedTabContent
             documents={savedDocumentsPlaceholder}
             isLoading={isLoadingSaved}
-            error={savedError}
+            error={null}
           />
         </TabsContent>
       </Tabs>

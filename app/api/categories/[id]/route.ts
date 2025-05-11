@@ -25,10 +25,10 @@ const categorySchema = z.object({
 // GET /api/categories/[id] - Get category by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const category = await getCategoryById(params.id);
+    const category = await getCategoryById((await params).id);
     if (!category) {
       return NextResponse.json(
         { error: "Không tìm thấy danh mục" },
@@ -71,7 +71,7 @@ export async function GET(
 // PATCH /api/categories/[id] - Update category
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -118,7 +118,7 @@ export async function PUT(
       }
     }
 
-    const updatedCategory = await updateCategory(params.id, {
+    const updatedCategory = await updateCategory((await params).id, {
       name: validationResult.data.name,
       slug: validationResult.data.slug,
       description: validationResult.data.description,
@@ -144,7 +144,7 @@ export async function PUT(
 // DELETE /api/categories/[id] - Delete category
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -158,7 +158,7 @@ export async function DELETE(
       );
     }
 
-    const deletedCategory = await deleteCategory(params.id);
+    const deletedCategory = await deleteCategory((await params).id);
     if (!deletedCategory) {
       return NextResponse.json(
         { error: "Không tìm thấy danh mục" },

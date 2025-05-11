@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = (await auth.api.getSession({
@@ -19,7 +19,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const document = await getDocumentById(params.id);
+    const document = await getDocumentById((await params).id);
     if (!document) {
       return NextResponse.json(
         { error: "Document not found" },
@@ -28,7 +28,7 @@ export async function GET(
     }
 
     // Increment view count
-    await incrementDocumentViewCount(params.id);
+    await incrementDocumentViewCount((await params).id);
 
     return NextResponse.json(document);
   } catch (error) {
@@ -41,10 +41,7 @@ export async function GET(
 }
 
 // PUT /api/documents/[id] - Cập nhật document
-export async function PUT(
-  request: NextRequest,
-  {}: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest) {
   try {
     const session = (await auth.api.getSession({
       headers: await headers(),
@@ -76,7 +73,7 @@ export async function PUT(
 }
 
 // DELETE /api/documents/[id] - Xóa document
-export async function DELETE({}: { params: { id: string } }) {
+export async function DELETE() {
   try {
     const session = (await auth.api.getSession({
       headers: await headers(),

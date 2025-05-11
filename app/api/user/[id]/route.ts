@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 // GET /api/user/[id]
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userData = await getUserById(params.id);
+    const userData = await getUserById((await params).id);
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -24,7 +24,7 @@ export async function GET(
 // PUT /api/user/[id]
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
@@ -77,7 +77,7 @@ export async function PUT(
 // DELETE /api/user/[id]
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = (await params).id;

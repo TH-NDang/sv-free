@@ -40,32 +40,50 @@ async function deleteDocument(id: string) {
   }
 }
 
-// async function updateDocument(id: string, data: any) {
-//   try {
-//     const response = await fetch(`/api/documents/${id}`, {
-//       method: "PUT",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(data),
-//     });
+async function fetchDocuments({
+  search,
+  category,
+  page,
+  pageSize,
+  sortBy = "createdAt",
+  sortOrder = "desc",
+}: {
+  search?: string;
+  category?: string;
+  page: number;
+  pageSize: number;
+  sortBy?: string;
+  sortOrder?: string;
+}) {
+  const searchParams = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+    ...(search && { search }),
+    ...(category && { categoryId: category }),
+    sortBy,
+    sortOrder,
+  });
 
-//     if (!response.ok) {
-//       const error = await response.json();
-//       throw new Error(error.error || "Failed to update document");
-//     }
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const response = await fetch(
+    `${baseUrl}/api/documents?${searchParams.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    }
+  );
 
-//     return response.json();
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+  if (!response.ok) {
+    throw new Error("Failed to fetch documents");
+  }
+
+  return response.json();
+}
 
 interface DocumentsTableProps {
-  documents: DocumentWithDetails[];
-  total: number;
-  currentPage: number;
-  totalPages: number;
   search?: string;
   category?: string;
   sortBy?: string;
@@ -73,20 +91,17 @@ interface DocumentsTableProps {
 }
 
 export function DocumentsTable({
-  documents,
-  total,
-  currentPage,
-  totalPages,
-  // search,
-  // category,
-  // sortBy = "createdAt",
-  // sortOrder = "desc",
+  search,
+  category,
+  sortBy = "createdAt",
+  sortOrder = "desc",
 }: DocumentsTableProps) {
   const router = useRouter();
-  // const searchParams = useSearchParams();
   const [editingDocument, setEditingDocument] =
     useState<DocumentWithDetails | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -97,13 +112,30 @@ export function DocumentsTable({
     },
   });
 
-  // const baseUrl = `/admin/documents?${new URLSearchParams({
-  //   ...(search && { search }),
-  //   ...(category && { category }),
-  //   sortBy,
-  //   sortOrder,
-  //   page: currentPage.toString(),
-  // }).toString()}`;
+  const { data: documentsData, isLoading } = useQuery({
+    queryKey: [
+      "documents",
+      search,
+      category,
+      currentPage,
+      pageSize,
+      sortBy,
+      sortOrder,
+    ],
+    queryFn: () =>
+      fetchDocuments({
+        search,
+        category,
+        page: currentPage,
+        pageSize,
+        sortBy,
+        sortOrder,
+      }),
+  });
+
+  const documents = documentsData?.data || [];
+  const total = documentsData?.total || 0;
+  const totalPages = documentsData?.totalPages || 0;
 
   const handleUpdate = (doc: DocumentWithDetails) => {
     setIsCreating(false);
@@ -147,12 +179,9 @@ export function DocumentsTable({
     }
   };
 
-  // const handleCategoryClick = (categoryId: string) => {
-  //   const params = new URLSearchParams(searchParams.toString());
-  //   params.set("category", categoryId);
-  //   params.set("page", "1");
-  //   router.push(`/admin/documents?${params.toString()}`);
-  // };
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
@@ -169,7 +198,6 @@ export function DocumentsTable({
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
-                  {/* <TableHead>Category</TableHead> */}
                   <TableHead>Author</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Downloads</TableHead>
@@ -179,21 +207,9 @@ export function DocumentsTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc) => (
+                {documents.map((doc: DocumentWithDetails) => (
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">{doc.title}</TableCell>
-                    {/* <TableCell>
-                    {doc.category ? (
-                      <button
-                        onClick={() => handleCategoryClick(doc.category?.id)}
-                        className="text-primary hover:underline"
-                      >
-                        {doc.category?.name}
-                      </button>
-                    ) : (
-                      "Uncategorized"
-                    )}
-                  </TableCell> */}
                     <TableCell>{doc.author?.name || "Unknown"}</TableCell>
                     <TableCell>
                       <span
@@ -242,9 +258,7 @@ export function DocumentsTable({
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={(page) => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("page", page.toString());
-                    window.location.href = url.toString();
+                    setCurrentPage(page);
                   }}
                 />
               </div>

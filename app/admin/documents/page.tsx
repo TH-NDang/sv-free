@@ -7,49 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 //   searchParams: { [key: string]: string | string[] | undefined };
 // }
 
-async function fetchDocuments({
-  search,
-  category,
-  page,
-  pageSize,
-  sortBy = "createdAt",
-  sortOrder = "desc",
-}: {
-  search?: string;
-  category?: string;
-  page: number;
-  pageSize: number;
-  sortBy?: string;
-  sortOrder?: string;
-}) {
-  const searchParams = new URLSearchParams({
-    page: page.toString(),
-    pageSize: pageSize.toString(),
-    ...(search && { search }),
-    ...(category && { categoryId: category }),
-    sortBy,
-    sortOrder,
-  });
-
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    `${baseUrl}/api/documents?${searchParams.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch documents");
-  }
-
-  return response.json();
-}
-
 // async function deleteDocument(id: string) {
 //   const response = await fetch(`/api/documents/${id}`, {
 //     method: "DELETE",
@@ -78,29 +35,11 @@ export default async function DocPage({
     ])
   );
 
-  const page = params.page || "1";
   const search = params.search;
   const category = params.category;
   const tab = params.tab || "documents";
   const sortBy = params.sortBy || "createdAt";
   const sortOrder = params.sortOrder || "desc";
-
-  const pageNumber = parseInt(page, 10) || 1;
-  const pageSize = 10;
-
-  // Lấy dữ liệu từ API
-  const {
-    data: paginatedDocuments,
-    total,
-    totalPages,
-  } = await fetchDocuments({
-    search,
-    category,
-    page: pageNumber,
-    pageSize,
-    sortBy,
-    sortOrder,
-  });
 
   const DocumentsTableSkeleton = () => (
     <div className="p-6">
@@ -138,14 +77,9 @@ export default async function DocPage({
 
         <AdminContent
           tab={tab}
-          documents={paginatedDocuments}
-          searchTerm={search}
           DocumentsTable={(props) => (
             <DocumentsTable
               {...props}
-              total={total}
-              currentPage={pageNumber}
-              totalPages={totalPages}
               search={search}
               category={category}
               sortBy={sortBy}

@@ -127,6 +127,20 @@ export const documentDownloads = pgTable("document_downloads", {
 export type DocumentDownload = InferSelectModel<typeof documentDownloads>;
 export type NewDocumentDownload = InferInsertModel<typeof documentDownloads>;
 
+export const savedDocuments = pgTable("saved_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  documentId: uuid("document_id")
+    .notNull()
+    .references(() => documents.id, { onDelete: "cascade" }),
+  savedAt: timestamp("saved_at").defaultNow().notNull(),
+});
+
+export type SavedDocument = InferSelectModel<typeof savedDocuments>;
+export type NewSavedDocument = InferInsertModel<typeof savedDocuments>;
+
 export const documentSchema = z.object({
   title: z
     .string()

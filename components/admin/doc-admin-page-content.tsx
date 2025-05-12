@@ -19,7 +19,7 @@ import { getCategories, getTags } from "@/lib/mock/admin-data";
 
 interface AdminContentProps {
   tab: string;
-  documents: DocumentWithDetails[];
+  documents?: DocumentWithDetails[];
   searchTerm?: string;
   DocumentsTable: React.ComponentType<{ documents: DocumentWithDetails[] }>;
   DocumentsTableSkeleton: React.ComponentType;
@@ -27,7 +27,7 @@ interface AdminContentProps {
 
 export async function AdminContent({
   tab,
-  documents,
+  documents = [],
   searchTerm,
   DocumentsTable,
   DocumentsTableSkeleton,

@@ -1,4 +1,4 @@
-import { db, getDb } from "@/lib/db";
+import { db } from "@/lib/db";
 import { categories, documents, reviews, tags, user } from "@/lib/db/schema";
 import { safeParseInt } from "@/lib/utils/parse";
 import crypto from "crypto";
@@ -105,7 +105,6 @@ export async function getTopDocuments() {
 
 // Người dùng + lượt tải
 export async function getUsers() {
-  const db = await getDb();
   const [result] = await db
     .select({
       count: sql<number>`count(*)`,
@@ -116,7 +115,6 @@ export async function getUsers() {
 
 // Người dùng mới trong 7 ngày qua
 export async function getNewUsers() {
-  const db = await getDb();
   const [result] = await db
     .select({
       count: sql<number>`count(*)`,
@@ -157,7 +155,6 @@ export async function getReviewsByDocumentId(
   documentId: string,
   options: { page: number; limit: number }
 ) {
-  const db = await getDb();
   const { page, limit } = options;
   const offset = (page - 1) * limit;
 
@@ -165,13 +162,12 @@ export async function getReviewsByDocumentId(
     .select()
     .from(reviews)
     .where(eq(reviews.documentId, documentId))
-    .orderBy(desc(reviews.createdAt)) // Sắp xếp giảm dần theo createdAt
+    .orderBy(desc(reviews.createdAt))
     .offset(offset)
     .limit(limit);
 }
 
 export async function getTotalReviewsByDocumentId(documentId: string) {
-  const db = await getDb();
   return db
     .select({ count: sql`COUNT(*)` })
     .from(reviews)
@@ -188,12 +184,11 @@ export async function addReview(data: {
   rating: number;
   comment?: string;
 }) {
-  const db = await getDb();
   const [insertedReview] = await db
     .insert(reviews)
     .values({
-      ...data, // Spread operator để thêm tất cả các trường từ data
-      id: sql`gen_random_uuid()`, // Generate a UUID for the id field
+      ...data,
+      id: sql`gen_random_uuid()`,
     })
     .returning();
 
@@ -208,7 +203,6 @@ export async function updateReviewById(
     comment?: string;
   }
 ) {
-  const db = await getDb();
   const [updatedReview] = await db
     .update(reviews)
     .set({
@@ -227,7 +221,6 @@ export async function updateReviewById(
 
 // Xóa đánh giá
 export async function deleteReviewById(reviewId: string) {
-  const db = await getDb();
   const [deletedReview] = await db
     .delete(reviews)
     .where(eq(reviews.id, reviewId))
@@ -263,11 +256,8 @@ export async function getAllUsers({
   sortBy?: "name" | "email" | "role" | "createdAt";
   sortOrder?: "asc" | "desc";
 }): Promise<PaginatedResult<typeof user.$inferSelect>> {
-  const db = await getDb();
-  // Tính toán offset
   const offset = (page - 1) * pageSize;
 
-  // Xác định cột sắp xếp
   const sortColumn =
     {
       name: user.name,
@@ -276,7 +266,6 @@ export async function getAllUsers({
       createdAt: user.createdAt,
     }[sortBy] || user.createdAt;
 
-  // Thực hiện query với phân trang và sắp xếp
   const [users, total] = await Promise.all([
     db
       .select()
@@ -301,7 +290,6 @@ export async function getAllUsers({
 
 // Lấy user theo ID
 export async function getUserById(id: string) {
-  const db = await getDb();
   const [userData] = await db.select().from(user).where(eq(user.id, id));
   return userData;
 }
@@ -315,7 +303,6 @@ export async function createUser(data: {
   banReason?: string;
   banExpires?: Date;
 }) {
-  const db = await getDb();
   const [newUser] = await db
     .insert(user)
     .values({
@@ -346,7 +333,6 @@ export async function updateUser(
     banExpires?: Date;
   }
 ) {
-  const db = await getDb();
   const [updatedUser] = await db
     .update(user)
     .set({
@@ -365,7 +351,6 @@ export async function updateUser(
 
 // Xóa user
 export async function deleteUser(id: string) {
-  const db = await getDb();
   const [deletedUser] = await db
     .delete(user)
     .where(eq(user.id, id))
@@ -380,7 +365,6 @@ export async function deleteUser(id: string) {
 
 // Tìm kiếm users theo tên
 export async function searchUsers(query: string) {
-  const db = await getDb();
   return await db
     .select()
     .from(user)
@@ -490,11 +474,8 @@ export async function getAllDocuments({
   categoryId?: string;
   published?: boolean;
 }): Promise<PaginatedResult<typeof documents.$inferSelect>> {
-  const db = await getDb();
-  // Tính toán offset
   const offset = (page - 1) * pageSize;
 
-  // Xác định cột sắp xếp
   const sortColumn =
     {
       title: documents.title,
@@ -503,7 +484,6 @@ export async function getAllDocuments({
       viewCount: documents.viewCount,
     }[sortBy] || documents.createdAt;
 
-  // Tạo điều kiện tìm kiếm
   const conditions = [];
   if (searchQuery) {
     conditions.push(ilike(documents.title, `%${searchQuery}%`));
@@ -515,7 +495,6 @@ export async function getAllDocuments({
     conditions.push(eq(documents.published, published));
   }
 
-  // Thực hiện query với phân trang và sắp xếp
   const [docs, total] = await Promise.all([
     db
       .select({
@@ -572,7 +551,6 @@ export async function getAllDocuments({
 
 // Lấy document theo ID
 export async function getDocumentById(id: string) {
-  const db = await getDb();
   const [document] = await db
     .select({
       id: documents.id,
@@ -616,7 +594,6 @@ export async function updateDocument(
     published?: boolean;
   }
 ) {
-  const db = await getDb();
   const [updatedDoc] = await db
     .update(documents)
     .set({
@@ -635,7 +612,6 @@ export async function updateDocument(
 
 // Xóa document
 export async function deleteDocument(id: string) {
-  const db = await getDb();
   const [deletedDoc] = await db
     .delete(documents)
     .where(eq(documents.id, id))
@@ -665,7 +641,6 @@ export async function getAllCategories({
 }): Promise<
   PaginatedResult<typeof categories.$inferSelect & { documentCount: number }>
 > {
-  const db = await getDb();
   const offset = (page - 1) * pageSize;
 
   const sortColumn =
@@ -725,7 +700,6 @@ export async function getAllCategories({
 
 // Get category by ID
 export async function getCategoryById(id: string) {
-  const db = await getDb();
   const [category] = await db
     .select()
     .from(categories)
@@ -735,7 +709,6 @@ export async function getCategoryById(id: string) {
 
 // Get category by slug
 export async function getCategoryBySlug(slug: string) {
-  const db = await getDb();
   const [category] = await db
     .select()
     .from(categories)
@@ -749,7 +722,6 @@ export async function createCategory(data: {
   slug: string;
   description?: string;
 }) {
-  const db = await getDb();
   const [newCategory] = await db
     .insert(categories)
     .values({
@@ -773,7 +745,6 @@ export async function updateCategory(
     description?: string;
   }
 ) {
-  const db = await getDb();
   const [updatedCategory] = await db
     .update(categories)
     .set({
@@ -792,7 +763,6 @@ export async function updateCategory(
 
 // Delete category
 export async function deleteCategory(id: string) {
-  const db = await getDb();
   const [deletedCategory] = await db
     .delete(categories)
     .where(eq(categories.id, id))
@@ -807,7 +777,6 @@ export async function deleteCategory(id: string) {
 
 // Check if category name exists
 export async function isCategoryNameExists(name: string) {
-  const db = await getDb();
   const [category] = await db
     .select()
     .from(categories)
@@ -817,7 +786,6 @@ export async function isCategoryNameExists(name: string) {
 
 // Check if category slug exists
 export async function isCategorySlugExists(slug: string) {
-  const db = await getDb();
   const [category] = await db
     .select()
     .from(categories)
@@ -827,7 +795,6 @@ export async function isCategorySlugExists(slug: string) {
 
 // Get total number of categories
 export async function getTotalCategoriesCount() {
-  const db = await getDb();
   const [result] = await db
     .select({
       count: sql<number>`count(*)`,
@@ -838,7 +805,6 @@ export async function getTotalCategoriesCount() {
 
 // Get categories with document count
 export async function getCategoriesWithDocumentCount() {
-  const db = await getDb();
   return await db
     .select({
       id: categories.id,
@@ -855,7 +821,6 @@ export async function getCategoriesWithDocumentCount() {
 
 // Get all categories without pagination
 export async function getAllCategoriesWithoutPagination() {
-  const db = await getDb();
   const result = await db
     .select({
       id: categories.id,
@@ -889,7 +854,6 @@ export async function getAllTags({
   sortOrder?: "asc" | "desc";
   searchQuery?: string;
 }): Promise<PaginatedResult<typeof tags.$inferSelect>> {
-  const db = await getDb();
   const offset = (page - 1) * pageSize;
 
   const sortColumn =
@@ -939,21 +903,18 @@ export async function getAllTags({
 
 // Get tag by ID
 export async function getTagById(id: string) {
-  const db = await getDb();
   const [tag] = await db.select().from(tags).where(eq(tags.id, id));
   return tag;
 }
 
 // Get tag by slug
 export async function getTagBySlug(slug: string) {
-  const db = await getDb();
   const [tag] = await db.select().from(tags).where(eq(tags.slug, slug));
   return tag;
 }
 
 // Create new tag
 export async function createTag(data: { name: string; slug: string }) {
-  const db = await getDb();
   const [newTag] = await db
     .insert(tags)
     .values({
@@ -974,12 +935,10 @@ export async function updateTag(
     slug?: string;
   }
 ) {
-  const db = await getDb();
   const [updatedTag] = await db
     .update(tags)
     .set({
       ...data,
-      updatedAt: new Date(),
     })
     .where(eq(tags.id, id))
     .returning();
@@ -993,7 +952,6 @@ export async function updateTag(
 
 // Delete tag
 export async function deleteTag(id: string) {
-  const db = await getDb();
   const [deletedTag] = await db.delete(tags).where(eq(tags.id, id)).returning();
 
   if (!deletedTag) {
@@ -1005,21 +963,18 @@ export async function deleteTag(id: string) {
 
 // Check if tag name exists
 export async function isTagNameExists(name: string) {
-  const db = await getDb();
   const [tag] = await db.select().from(tags).where(eq(tags.name, name));
   return !!tag;
 }
 
 // Check if tag slug exists
 export async function isTagSlugExists(slug: string) {
-  const db = await getDb();
   const [tag] = await db.select().from(tags).where(eq(tags.slug, slug));
   return !!tag;
 }
 
 // Get total number of tags
 export async function getTotalTagsCount() {
-  const db = await getDb();
   const [result] = await db
     .select({
       count: sql<number>`count(*)`,
@@ -1030,7 +985,6 @@ export async function getTotalTagsCount() {
 
 // Get all tags without pagination
 export async function getAllTagsWithoutPagination() {
-  const db = await getDb();
   return await db.select().from(tags).orderBy(asc(tags.name));
 }
 
@@ -1065,7 +1019,6 @@ export async function createDocument(data: {
   categoryId: string;
   authorId: string;
 }) {
-  const db = await getDb();
   const [newDocument] = await db
     .insert(documents)
     .values({

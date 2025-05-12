@@ -86,7 +86,7 @@ export default function AnalyticsPage() {
 
   // Memoize filtered data
   const filteredUsers = useMemo(() => {
-    if (!data?.newUsers) return [];
+    if (!data?.newUsers || !Array.isArray(data.newUsers)) return [];
     return data.newUsers.filter(
       (user: User) =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
   }, [data?.newUsers, searchTerm]);
 
   const filteredDocs = useMemo(() => {
-    if (!data?.topDocuments) return [];
+    if (!data?.topDocuments || !Array.isArray(data.topDocuments)) return [];
     return data.topDocuments.filter((doc: TopDocument) =>
       doc.title.toLowerCase().includes(docSearchTerm.toLowerCase())
     );

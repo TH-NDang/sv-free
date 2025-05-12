@@ -43,12 +43,12 @@ export async function GET(
 // PUT /api/documents/[id] - Cập nhật document
 export async function PUT(request: NextRequest) {
   try {
-    const session = (await auth.api.getSession({
-      headers: await headers(),
-    })) as Session | null;
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // const session = (await auth.api.getSession({
+    //   headers: await headers(),
+    // })) as Session | null;
+    // if (!session?.userId) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
 
     const formData = await request.formData();
     const data = JSON.parse(formData.get("data") as string);

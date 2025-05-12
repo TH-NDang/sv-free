@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { createDocument, getAllDocuments } from "@/lib/db/new_queries";
 import { documentSchema } from "@/lib/db/schema";
 import { getPublicUrl } from "@/lib/supabase/utils";
+import { randomUUID } from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -34,7 +35,13 @@ export async function POST(request: NextRequest) {
     const validated = validationResult.data;
 
     const documentData = {
+      id: randomUUID(),
       ...validated,
+      description: validated.description || undefined,
+      fileType: validated.fileType || undefined,
+      fileSize: validated.fileSize || undefined,
+      thumbnailStoragePath: validated.thumbnailStoragePath || undefined,
+      categoryId: validated.categoryId || "",
       authorId: session.user.id,
     };
 

@@ -45,6 +45,14 @@ const fetchUserDocuments = async (): Promise<FetchedUserDocument[]> => {
   return response.json();
 };
 
+const fetchUserStats = async () => {
+  const response = await fetch("/api/user/stats");
+  if (!response.ok) {
+    throw new Error("Failed to fetch user stats");
+  }
+  return response.json();
+};
+
 // --- Sub-Components --- //
 
 interface ProfileHeaderProps {
@@ -296,30 +304,31 @@ export default function ProfilePage() {
   });
 
   const {
+    data: userStats = { uploads: 0, downloads: 0, savedDocuments: 0 },
+    isLoading: isLoadingStats,
+  } = useQuery({
+    queryKey: ["userStats", user?.id],
+    queryFn: fetchUserStats,
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user,
+  });
+
+  const {
     data: savedDocumentsPlaceholder = [],
     isLoading: isLoadingSaved,
     error: savedError,
   } = useQuery<FetchedUserDocument[], Error>({
     queryKey: ["savedDocuments", user?.id],
     queryFn: async () => {
-      // Replace with actual API call to fetch saved/bookmarked docs
-      // Example: const response = await fetch("/api/bookmarks"); return response.json();
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate fetch
-      return userDocuments.slice(0, 2);
+      const response = await fetch("/api/user/saved-documents");
+      if (!response.ok) {
+        throw new Error("Failed to fetch saved documents");
+      }
+      return response.json();
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !!user && activeTab === "saved", // Fetch only when tab is active
+    enabled: !!user && activeTab === "saved",
   });
-
-  // Calculate stats
-  const userStats = {
-    uploads: userDocuments.length,
-    downloads: userDocuments.reduce(
-      (sum, doc) => sum + (doc.downloadCount || 0),
-      0
-    ),
-    savedDocuments: savedDocumentsPlaceholder.length,
-  };
 
   // Could add a state if session load failed or no user
   if (!user && !isLoadingSession) {
@@ -330,8 +339,6 @@ export default function ProfilePage() {
           <p className="text-muted-foreground mb-4">
             You need to be logged in to view your library.
           </p>
-          {/* Optionally add a login button/link here */}
-          {/* Example: <Link href="/login"><Button>Log In</Button></Link> */}
         </div>
       </div>
     );
@@ -340,7 +347,7 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto max-w-5xl p-4 md:p-6">
       <ProfileHeader user={user} isLoading={isLoadingSession} />
-      <ProfileStats stats={userStats} isLoading={isLoadingSession} />
+      <ProfileStats stats={userStats} isLoading={isLoadingStats} />
 
       <Tabs
         defaultValue="uploads"

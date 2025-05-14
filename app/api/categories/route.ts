@@ -1,5 +1,10 @@
 import { auth } from "@/lib/auth";
-import { createCategory, getCategories } from "@/lib/db/queries";
+import {
+  createCategory,
+  getAllCategories,
+  isCategoryNameExists,
+  isCategorySlugExists,
+} from "@/lib/db/new_queries";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -13,12 +18,29 @@ const categorySchema = z.object({
     .string()
     .min(2, "Slug phải có ít nhất 2 ký tự")
     .max(100, "Slug không được vượt quá 100 ký tự"),
-  description: z.string().optional().nullable(),
+  description: z.string().optional(),
 });
 
-export async function GET() {
+// GET /api/categories - Get all categories with pagination
+export async function GET(request: NextRequest) {
   try {
-    const categories = await getCategories();
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const sortBy =
+      (searchParams.get("sortBy") as "name" | "createdAt") || "name";
+    const sortOrder =
+      (searchParams.get("sortOrder") as "asc" | "desc") || "asc";
+    const searchQuery = searchParams.get("searchQuery") || "";
+
+    const categories = await getAllCategories({
+      page,
+      pageSize,
+      sortBy,
+      sortOrder,
+      searchQuery,
+    });
+
     return NextResponse.json(categories);
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -29,6 +51,7 @@ export async function GET() {
   }
 }
 
+// POST /api/categories - Create new category
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -55,7 +78,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await createCategory(validationResult.data);
+    // Check if name or slug already exists
+    const [nameExists, slugExists] = await Promise.all([
+      isCategoryNameExists(validationResult.data.name),
+      isCategorySlugExists(validationResult.data.slug),
+    ]);
+
+    if (nameExists) {
+      return NextResponse.json(
+        { error: "Tên danh mục đã tồn tại" },
+        { status: 400 }
+      );
+    }
+
+    if (slugExists) {
+      return NextResponse.json(
+        { error: "Slug danh mục đã tồn tại" },
+        { status: 400 }
+      );
+    }
+
+    const result = await createCategory({
+      name: validationResult.data.name,
+      slug: validationResult.data.slug,
+      description: validationResult.data.description,
+    });
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

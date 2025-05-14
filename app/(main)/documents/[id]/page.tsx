@@ -235,7 +235,7 @@ export default function DocumentDetailPage() {
     };
 
     fetchReviews();
-  }, [currentPage, documentId, isFetchingMore]);
+  }, [currentPage, documentId]);
 
   useEffect(() => {
     if (isError && error) {

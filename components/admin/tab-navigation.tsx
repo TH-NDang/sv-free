@@ -16,21 +16,33 @@ export function AdminTabNavigation() {
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("tab", value);
+    // Reset page to 1 for both documents and categories
+    params.set("page", "1");
+    params.set("categoryPage", "1");
     router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="documents" className="flex items-center gap-2">
+        <TabsTrigger
+          value="documents"
+          className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 transition-colors"
+        >
           <File className="h-4 w-4" />
           <span>Documents</span>
         </TabsTrigger>
-        <TabsTrigger value="categories" className="flex items-center gap-2">
+        <TabsTrigger
+          value="categories"
+          className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 transition-colors"
+        >
           <Folder className="h-4 w-4" />
           <span>Categories</span>
         </TabsTrigger>
-        <TabsTrigger value="tags" className="flex items-center gap-2">
+        <TabsTrigger
+          value="tags"
+          className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 transition-colors"
+        >
           <Tag className="h-4 w-4" />
           <span>Tags</span>
         </TabsTrigger>

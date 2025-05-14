@@ -1,16 +1,10 @@
 "use client";
 
-import { Metadata } from "next";
 import Link from "next/link";
 
 import { TagsTable } from "@/components/admin/tags/tags-table";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "Tags",
-  description: "Manage document tags",
-};
 
 export default function TagsPage() {
   return (

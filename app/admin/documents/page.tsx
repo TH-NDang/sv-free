@@ -23,17 +23,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 // }
 
 export default async function DocPage({
-  searchParams,
+  searchParams = {} as Promise<{
+    [key: string]: string | string[] | undefined;
+  }>,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Convert searchParams to a regular object first
+  // Now we can safely use Object.entries
+  const entries = Object.entries(await searchParams);
+
   const params = Object.fromEntries(
-    Object.entries(searchParams).map(([key, value]) => [
+    entries.map(([key, value]) => [
       key,
       Array.isArray(value) ? value[0] : value,
     ])
   );
+  console.log("params", params);
 
   const search = params.search;
   const category = params.category;
@@ -63,13 +68,10 @@ export default async function DocPage({
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage documents, categories, and tags
-          </p>
-        </div>
-        {/* <AdminActionButton tab={tab} /> */}
+        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage documents, categories, and tags
+        </p>
       </div>
 
       <div className="space-y-4">

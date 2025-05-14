@@ -23,12 +23,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     ppr: "incremental",
-    // use by pdf-viewer.tsx
-    turbo: {
-      resolveAlias: {
-        canvas: "./empty-module.ts",
-      },
-    },
   },
   crossOrigin: "anonymous",
 };

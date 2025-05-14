@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { authClient } from "@/lib/auth-client";
 import { db } from "@/lib/db";
 import { documents, savedDocuments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const session = await auth();
+    const { data: session } = await authClient.getSession();
     if (!session?.user?.id) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -31,8 +31,6 @@ export async function GET() {
         viewCount: documents.viewCount,
         createdAt: documents.createdAt,
         updatedAt: documents.updatedAt,
-        category: documents.category,
-        author: documents.author,
       })
       .from(savedDocuments)
       .innerJoin(documents, eq(savedDocuments.documentId, documents.id))

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 
-import { CreateTagForm } from "@/components/admin/tags/create-tag-form";
+// import { CreateTagForm } from "@/components/admin/tags/create-tag-form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -27,7 +27,8 @@ export default function CreateTagPage() {
           Add a new tag to organize documents
         </p>
         <div className="mt-8">
-          <CreateTagForm />
+          {/* <CreateTagForm /> */}
+          <p>Tạm thời chưa hỗ trợ</p>
         </div>
       </div>
     </div>
